@@ -50,10 +50,10 @@ int main()
         [Note: this might be able to be sped up by using an O(NLog(N)) sort to limit which circles need to be compared by Z value]
         [Another potential optimization is to store nearby shapes in some kind of buffer so that shapes very far apart do not need to be compared]
         */
-        for(int i = 0; i < numberOfShapesToRender; i++){                                        //for each Circle A
-            for(int j = 0; j < numberOfShapesToRender&&!cull.at(i); j++){                           //for each Circle B (Skip further comparisons if Circle A has already been covered)
-                if(cull[j]){                                                                   //if Circle B is covered by another Circle C
-                    continue;                                                                   //Dont bother comparing against Circle A as if Circle B covers Circle A then Circle C will cover Circle A
+        for(int i = 0; i < numberOfShapesToRender; i++){                                           //for each Circle A
+            for(int j = 0; j < numberOfShapesToRender&&!cull.at(i); j++){                          //for each Circle B (Skip further comparisons if Circle A has already been covered)
+                if(cull[j]){                                                                       //if Circle B is covered by another Circle C
+                    continue;                                                                      //Dont bother comparing against Circle A as if Circle B covers Circle A then Circle C will cover Circle A
                 }
                 float XA = position.at(3*i);                                                       //Store information about Circle A
                 float YA = position.at((3*i)+1);
@@ -65,8 +65,8 @@ int main()
                 float ZB = position.at((3*j)+2);
                 float lengthB = infoForShape.at(j);
                 float deltaX = XB - XA;
-                float deltaY = XB - XA;
-                if(Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))){//if Circle A is covered by circle B
+                float deltaY = YB - YA;
+                if(Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(j)){                //if Circle A is covered by circle B
                     cull.at(i) = true;                                                            //Dont draw Circle A (Circle A is culled)
                 }
             }
