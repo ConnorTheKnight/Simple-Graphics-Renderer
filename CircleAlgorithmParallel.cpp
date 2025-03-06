@@ -9,10 +9,98 @@
 #include <condition_variable>
 
 using namespace std;
-void CircleJContainsI(int i, int j){
-    if(cull[j]){                                                                   //if Circle B is covered by another Circle C
-        continue;                                                                   //Dont bother comparing against Circle A as if Circle B covers Circle A then Circle C will cover Circle A
+
+vector<float> infoForShape;             //Store information on the size of each shape (for now only circles are being considered and thus only radius is needed)
+vector<float> position;                 //Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the circle [Note: Bottom = minimum Y value, Left = minimum X value])
+vector<atomic<bool>> cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
+vector<vector<atomic<bool>>> isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
+void distributeWorkCullingAlgorithm(int maxI, int maxJ,int threadsAllocated){
+    if(maxI<threadsAllocated){//if there are enough threads for each I value to get its own thread
+        int threadsPerI = (threadsAllocated+1)/maxI;//lower bound for the number of threads that can be allocated for each I value
+        int excessThreads = (threadsAllocated+1)%maxI;//number of threads which cant be evenly distributed
+        vector<thread> threads;
+        threads.reserve(maxI);
+        for(int index = 0; index < maxI; index++){
+            if(excessThreads>0){
+                threads.at(index) = new thread(distributeWorkCullingAlgorithmForI,index,maxJ,threadsPerI);
+            }
+            threads.at(index) = new thread(distributeWorkCullingAlgorithmForI,index,maxJ,threadsPerI-1);
+        }
+    }else{//otherwise give each thread a range of I values to solve sequentially
+        int IperThread = maxI/(threadsAllocated+1);//lower bound for the number of I values each thread must evaluate
+        int excessIValues = maxI%(threadsAllocated+1);//number of I values which cant be evenly distributed
+        vector<thread> threads;
+        threads.reserve(threadsAllocated);
+        int currI = 0;
+        for(int index = 0; index < threadsAllocated; index++){
+            if(excessIValues>0){
+                threads.at(index) = new thread(sequetialCullingAlgorithmIRange, currI, currI+IperThread+1, maxJ);
+                currI += IperThread+1;
+                excessIValues--;
+            }else{
+                threads.at(index) = new thread(sequetialCullingAlgorithmIRange, currI, currI+IperThread, maxJ);
+                currI += IperThread;
+            }         
+        }
+        sequetialCullingAlgorithmIRange(currI,maxI,maxJ);
+        for(auto& t: threads){//wait for all worker threads to finish
+            t.join();
+            delete(t);
+        }
     }
+}
+void distributeWorkCullingAlgorithmForI(int i, int maxJ,int threadsAllocated){
+    if(maxJ<threadsAllocated){//if there are enough threads for each J value to get its own thread
+        vector<thread> threads;
+        threads.reserve(maxJ);
+        for(int index = 0; index < maxJ; index++){
+            threads.at(index) = new thread(CircleJContainsI, i, index);
+        }
+    }else{//otherwise give each thread a range of J values to solve sequentially
+        int JperThread = maxJ/(threadsAllocated+1);//lower bound for the number of J values each thread must evaluate
+        int excessJValues = maxJ%(threadsAllocated+1);//number of J values which cant be evenly distributed
+        vector<thread> threads;
+        threads.reserve(threadsAllocated);
+        int currJ = 0;
+        for(int index = 0; index < threadsAllocated; index++){
+            if(excessJValues>0){
+                threads.at(index) = new thread(sequetialCullingAlgorithmJRange, i, currJ, currJ+JperThread+1);
+                currJ += JperThread+1;
+                excessJValues--;
+            }else{
+                threads.at(index) = new thread(sequetialCullingAlgorithmJRange, i, currJ, currJ+JperThread);
+                currJ += JperThread;
+            }         
+        }
+        sequetialCullingAlgorithmJRange(i,currJ,maxJ);
+        for(auto& t: threads){//wait for all worker threads to finish
+            t.join();
+            delete(t);
+        }
+    }
+}
+void sequetialCullingAlgorithmIRange(int i, int k, int maxJ){
+    for(int index1 = i; index1 < k; index1++){//for each circle i
+        for(int index2 = 0; index2 < maxJ; index2++){
+            if(cull.at(index2).load()){//if j has been culled
+                continue;
+            }
+            CircleJContainsI(index1,index2);
+        }
+    }
+}
+void sequetialCullingAlgorithmJRange(int i, int j, int k){
+    for(int index = j; index < k; index++){//for each circle j
+        if(cull.at(i).load()){//if other worker thread has already evaluated circle i to be culled
+            return;
+        }
+        if(cull.at(index).load()){//if j has been culled
+            continue;
+        }
+        CircleJContainsI(i,index);
+    }
+}
+void CircleJContainsI(int i, int j){
     float XA = position.at(3*i);                                                       //Store information about Circle A
     float YA = position.at((3*i)+1);
     float ZA = position.at((3*i)+2);
@@ -23,26 +111,95 @@ void CircleJContainsI(int i, int j){
     float radiusB = infoForShape.at(j);
     float deltaX = XB - XA;
     float deltaY = YB - YA;
-    if(Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))){//if Circle A is covered by circle B
-        cull.at(i) = true;                                                            //Dont draw Circle A (Circle A is culled)
+    if(Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))-){//if Circle A is covered by circle B if the magnitude of the x and y distance of the center of the inner circle from the center of the outer circle  
+        cull.at(i).store(true);                                                            //Dont draw Circle A (Circle A is culled)
     }
 }
-void fillCircleI(int i, int allocatedThreads, int threadID1){
-    int minX = (int) position.at(3*i) - infoForShape.at(i);                                        //get bounds of Shape in terms of grid units (integers)
-    int minY = (int) position.at((3*i)+1) - infoForShape.at(i);
-    int maxX = (int) (position.at(3*i)+infoForShape.at(i)+1);
-    int maxY = (int) (position.at((3*i)+1)+infoForShape.at(i)+1);
-    for(int X = 0; X < maxX; X++){                                                                 //for each grid unit in bounds
-        float deltaX = position.at(3*i) - X;
-        float deltaY = position.at((3*i)+1) - Y;
-        for(int Y = 0; Y < maxX; Y++){
-            //dispatchThreads to solve UnitXYinI()
+
+void distributeWorkDrawingAlgorithm(int i, int X, int Y, int Xdelta, int Ydelta, int threadsAllocated){
+    if(Xdelta<threadsAllocated){//if there are enough threads for each I value to get its own thread
+        int threadsPerX = (threadsAllocated+1)/Xdelta;//lower bound for the number of threads that can be allocated for each I value
+        int excessThreads = (threadsAllocated+1)%Xdelta;//number of threads which cant be evenly distributed
+        vector<thread> threads;
+        threads.reserve(Xdelta);
+        for(int index = 0; index < Xdelta; index++){
+            if(excessThreads>0){
+                threads.at(index) = new thread(distributeWorkDrawingAlgorithmForX, i, X+index, Y, Ydelta,threadsPerX);
+            }
+            threads.at(index) = new thread(distributeWorkDrawingAlgorithmForX, i, X+index, Y, Ydelta,threadsPerX-1);
+        }
+    }else{//otherwise give each thread a range of I values to solve sequentially
+        int XperThread = Xdelta/(threadsAllocated+1);//lower bound for the number of I values each thread must evaluate
+        int excessXValues = Xdelta%(threadsAllocated+1);//number of I values which cant be evenly distributed
+        vector<thread> threads;
+        threads.reserve(threadsAllocated);
+        int currX = X;
+        for(int index = 0; index < threadsAllocated; index++){
+            if(excessXValues>0){
+                threads.at(index) = new thread(sequetialDrawingAlgorithmXRange, i, currX, Y, currX+XperThread+1, Ydelta);
+                currX += XperThread+1;
+                excessXValues--;
+            }else{
+                threads.at(index) = new thread(sequetialDrawingAlgorithmXRange, i, currX, Y, currX+XperThread, Ydelta);
+                currX += XperThread;
+            }         
+        }
+        sequetialDrawingAlgorithmXRange(currX, Y, X+Xdelta, Ydelta);
+        for(auto& t: threads){//wait for all worker threads to finish
+            t.join();
+            delete(t);
         }
     }
 }
-void UnitXYinI(int i, float DeltaX, float DeltaY){
-    isFilled[Y][X] = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i);        //this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
+void distributeWorkDrawingAlgorithmForX(int i, int X, int Y, int Ydelta,int threadsAllocated){
+    if(Ydelta<threadsAllocated){//if there are enough threads for each J value to get its own thread
+        vector<thread> threads;
+        threads.reserve(Ydelta);
+        for(int index = 0; index < Ydelta; index++){
+            threads.at(index) = new thread(drawXY, i, X, Y+index);
+        }
+    }else{//otherwise give each thread a range of J values to solve sequentially
+        int YperThread = Ydelta/(threadsAllocated+1);//lower bound for the number of J values each thread must evaluate
+        int excessYValues = Ydelta%(threadsAllocated+1);//number of J values which cant be evenly distributed
+        vector<thread> threads;
+        threads.reserve(threadsAllocated);
+        int currY = Y;
+        for(int index = 0; index < threadsAllocated; index++){
+            if(excessYValues>0){
+                threads.at(index) = new thread(sequetialDrawingAlgorithmYRange, i, X, currY, currY+YperThread+1);
+                currY += YperThread+1;
+                excessYValues--;
+            }else{
+                threads.at(index) = new thread(sequetialDrawingAlgorithmYRange, i, X, currY, currY+YperThread);
+                currY += YperThread;
+            }         
+        }
+        sequetialCullingAlgorithmJRange(i,currY,Y+deltaY);
+        for(auto& t: threads){//wait for all worker threads to finish
+            t.join();
+            delete(t);
+        }
+    }
 }
+void sequetialDrawingAlgorithmXRange(int i, int X, int k, int Y, int deltaY){
+    for(int index1 = X; index1 < k; index1++){//for each circle i
+        for(int index2 = 0; index2 < deltaY; index2++){
+            drawXY(i,index1,Y+index2);
+        }
+    }
+}
+void sequetialDrawingAlgorithmYRange(int i, int X, int Y, int k){
+    for(int index = Y; index < k; index++){//for each circle j
+        drawXY(i,X,index);
+    }
+}
+void drawXY(int i, int X, int Y){
+    float deltaX = position.at(3*i) - X;
+    float deltaY = position.at((3*i)+1) - Y;
+    isFilled.at(Y).at(X).store(Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i));        //this grid unit is filled if the magnitude of the x and y displacement from the center of the circle is less than the radius of the circle
+}
+
+
 int main()
 {
     //-----Declare Variables-----   
@@ -50,10 +207,6 @@ int main()
     int horizontalExtentOfGrid = 0;         //Store number of horizontal grid units (number of columns) 
     int numberOfShapesToRender = 0;         //Store number of shapes to be provided for rendering
     int numberThreads = 0;                  //Store number of threads to use in this algorithm
-    vector<float> infoForShape;             //Store information on the size of each shape (for now only circles are being considered and thus only radius is needed)
-    vector<float> position;                 //Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the circle [Note: Bottom = minimum Y value, Left = minimum X value])
-    vector<bool> cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
-    vector<vector<bool>> isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
     
     
     //-----Read User Input-----
@@ -62,7 +215,7 @@ int main()
     //Read in number of horizontal grid units from stdin
     cin >> horizontalExtentOfGrid;
     //Initialize isFilled Array
-    isFilled.assign(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
+    isFilled.assign(verticalExtentOfGrid, vector<atomic<bool>>(horizontalExtentOfGrid, false));
     //Read in number of shapes to render from stdin
     cin >> numberOfShapesToRender;
     //Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
@@ -82,24 +235,42 @@ int main()
     }
     
     //-----Begin Processing-----
-    /* Note that this is the part of the algorithm which will need concurrency to be implemneted efficiently*/
         //-----Culling Algorithim-----
         /*A simple Culling Algorithm for determining whether Circle A is covered by Circle B is:
         if(sqrt((XB-XA)^2 + (YB-YA)^2)<radiusB){
             circle A is covered
         }
         
-        This implementation will uses threads to simultaneously compare each pair of circles using that algorithim in O(N^2)/numThreads time 
+        This implementation will uses threads to simultaneously compare each pair of circles using that algorithim in (O(N)/numThreads)*O(N) time 
         [Note: this might be able to be sped up by using an O(NLog(N)) sort to limit which circles need to be compared by Z value]
         [Another potential optimization is to store nearby shapes in some kind of buffer so that shapes very far apart do not need to be compared]
         */
-        for(int i = 0; i < numberOfShapesToRender; i++){                                        //for each Circle A
-            for(int j = 0; j < numberOfShapesToRender&&!cull.at(i); j++){                           //for each Circle B (Skip further comparisons if Circle A has already been covered)
-                //dispatch threads to solve CircleJContainsI()
-            }
-        }                                                                                       
-        //All remaining false values in the cull Array represent circles that are at least in part uncovered (need to be drawn)
+        /*Potential performance optimization, thre current implementation is going to have a very large amount of overhead when the number of threads available is
+        less than the number of shapes to render, this is because every time a thread finishes calculations for a shape, it is destroyed and a new thread is created
+        to handle the next shape. This performance overhead could be greatly diminished if the threads were reused, however it would likely involve the management of
+        a concurrent queue or other shared data structure.
+        */
+        distributeWorkCullingAlgorithm(numberOfShapesToRender,numberOfShapesToRender,numberThreads);
         
+        //All remaining false values in the cull Array represent circles that are at least in part uncovered (need to be drawn)
+
+        //-----Fairness Algorithm-----
+        /*In order to ensure the workload is evenly distributed among all threads,
+        extra calculations need to be made to determine the number of pixels which need to be evaluated, these calculations will scale
+        to O(number of shapes).*/
+        float maxCalculations = 0;
+        int numShapes = 0;
+        vector<int> sideLengths;
+        for(int i = 0; i < numberOfShapesToRender; i++){
+            if(culled.at(i)){
+                continue;
+            }
+            int sideLength = ((int)(infoForShape.at(i)+1))<<2;
+            sideLengths.emplaceBack(sideLength);
+            maxCalculations += sideLength*sideLength;
+            numShapes++;
+        }
+
         //-----Drawing Algorithim-----
         /*A simple drawing Algorithm for determining which gridUnits are filled by Circle I:
         for CircleI
@@ -119,18 +290,43 @@ int main()
         This implementation will run the above algorithim on each circle in O(N*(maxLength^2)) time 
         [Note: this might be able to be sped up by using a Data structure to avoid running a check on every single circle]
         */
-        for(int i = 0; i < numberOfShapesToRender; i++){
-            if(cull.at(i)){                                                                                //if shape has been culled by culling algorithim
-                continue;                                                                                  //Do not evaluate
+        if(numberThreads>numShapes){//if at least 1 thread for each shape to render
+            vector<thread> threads;
+            int index = 0;
+            for(int i = 0; i < numberOfShapesToRender; i++){
+                if(culled.at(i)){
+                    continue;
+                }
+                int sideLength = sideLengths.at(index++);
+                int numCalculations = sideLength*sideLength;
+                float fractionThreads = (numCalculations*1.0)/maxCalculations;
+                threads.emplaceBack(distributeWorkDrawingAlgorithm, i, position.at(3*i), position.at((3*i)+1), sideLength, sideLength, ((int)(fractionThreads*numberThreads)));
             }
-            //need to find number of threads needed to ensure fairness
-            //current implementation evaluates all gridUnits in the minimum square that contains the circle
-            //area of this box (with each side length rounded up) is equal to the (int)(sidelength+1) squared
-            //sidelength is radius*2
-            //possible off by one error, will investigate later
-            int sideLengthCeiling = (int)((radius*2)+1);
-            int numberOfThreads = sideLengthCeiling*sideLengthCeiling;
-            //dispatch threads which will be responsible for managing numberOfThreads threads to solve fillCircleI()
+        }else{
+            vector<thread> threads;
+            int index = 0;
+            int temp = 0;
+            for(int i = 0; i < numberOfShapesToRender&&index<numThreads; i++){
+                if(culled.at(i)){
+                    continue;
+                }
+                int sideLength = sideLengths.at(index++);
+                threads.emplaceBack(distributeWorkDrawingAlgorithm, i, position.at(3*i), position.at((3*i)+1), sideLength, sideLength, 0);
+                temp = i+1;
+            }
+            int head = 0;
+            for(int i = temp; i < numberOfShapesToRender; i++){
+                if(culled.at(i)){
+                    continue;
+                }
+                int sideLength = sideLengths.at(index++);
+                threads.at(head).join();
+                threads.at(head++) = new thread(distributeWorkDrawingAlgorithm, i, position.at(3*i), position.at((3*i)+1), sideLength, sideLength, 0);
+            }
+            for(auto& t: threads){//wait for all worker threads to finish
+                t.join();
+                delete(t);
+            }
         }
         
     //-----End Processing-----
@@ -150,3 +346,4 @@ int main()
     
     return 0;
 }
+
