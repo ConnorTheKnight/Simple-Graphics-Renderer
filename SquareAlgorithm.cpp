@@ -54,6 +54,9 @@ int main()
                 if(cull[j]){                                                                   //if Square B is covered by another Square C
                     continue;                                                                   //Dont bother comparing against Square A as if Square B covers Square A then Square C will cover Square A
                 }
+                if(i==j){                                                                   //if Square B is covered by another Square C
+                    continue;                                                                   //Dont bother comparing against Square A as if Square B covers Square A then Square C will cover Square A
+                }
                 float XA = position.at(2*i);                                                       //Store information about Square A
                 float YA = position.at((2*i)+1);
                 float lengthA = infoForShape.at(i);
