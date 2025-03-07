@@ -27,15 +27,14 @@ int main()
     //Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
     infoForShape.resize(numberOfShapesToRender);
     //Initialize Positon Array
-    position.resize(numberOfShapesToRender*3);
+    position.resize(numberOfShapesToRender*2);
     //Initialize Cull Array
     cull.assign(numberOfShapesToRender, false);
     //Read in information on dimensions of each shape (sidelength of each square) followed by its X, Y, and Z coordinates from stdin
     for(int i = 0; i < numberOfShapesToRender; i++){
         cin >> infoForShape.at(i);     //Read in information on dimensions (sidelength)
-        cin >> position.at(3*i);       //Read in X coordinate
-        cin >> position.at((3*i)+1);   //Read in Y coordinate
-        cin >> position.at((3*i)+2);   //Read in Z coordinate
+        cin >> position.at(2*i);       //Read in X coordinate
+        cin >> position.at((2*i)+1);   //Read in Y coordinate
     }
     
     //-----Begin Processing-----
@@ -55,14 +54,12 @@ int main()
                 if(cull[j]){                                                                   //if Square B is covered by another Square C
                     continue;                                                                   //Dont bother comparing against Square A as if Square B covers Square A then Square C will cover Square A
                 }
-                float XA = position.at(3*i);                                                       //Store information about Square A
-                float YA = position.at((3*i)+1);
-                float ZA = position.at((3*i)+2);
+                float XA = position.at(2*i);                                                       //Store information about Square A
+                float YA = position.at((2*i)+1);
                 float lengthA = infoForShape.at(i);
                 
-                float XB = position.at(3*j);                                                       //Store information about Square B
-                float YB = position.at((3*j)+1);
-                float ZB = position.at((3*j)+2);
+                float XB = position.at(2*j);                                                       //Store information about Square B
+                float YB = position.at((2*j)+1);
                 float lengthB = infoForShape.at(j);
                 if((XA>XB)&&(YA>YB)&&(ZA<ZB)&&(XA+lengthA<XB+lengthB)&&(YA+lengthA<YB+lengthB)){//if Square A is covered by square B
                     cull.at(i) = true;                                                            //Dont draw Square A (Square A is culled)
@@ -90,12 +87,12 @@ int main()
             if(cull.at(i)){                                            //if shape has been culled by culling algorithim
                 continue;                                           //Do not evaluate
             }
-            int minX = (int) position.at(3*i);                         //get bounds of Shape in terms of grid units (integers)
-            int minY = (int) position.at((3*i)+1);
-            int maxX = (int) (position.at(3*i)+infoForShape.at(i)+1);
-            int maxY = (int) (position.at((3*i)+1)+infoForShape.at(i)+1);
-            for(int X = 0; X < maxX; X++){                          //for each grid unit in bounds
-                for(int Y = 0; Y < maxX; Y++){
+            int minX = (int) position.at(2*i);                         //get bounds of Shape in terms of grid units (integers)
+            int minY = (int) position.at((2*i)+1);
+            int maxX = (int) (position.at(2*i)+infoForShape.at(i)+1);
+            int maxY = (int) (position.at((2*i)+1)+infoForShape.at(i)+1);
+            for(int X = minX; X < maxX; X++){                          //for each grid unit in bounds
+                for(int Y = minY; Y < maxX; Y++){
                     isFilled[Y][X] = true;                          //this grid unit is filled
                 }
             }
