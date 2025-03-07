@@ -2,11 +2,6 @@
 #include <vector>
 #include <thread>
 #include <atomic>
-#include <mutex>
-#include <deque>
-#include <chrono>
-#include <unistd.h> 
-#include <condition_variable>
 
 using namespace std;
 
