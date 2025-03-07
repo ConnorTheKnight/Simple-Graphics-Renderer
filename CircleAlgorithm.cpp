@@ -54,6 +54,9 @@ int main()
                 if(cull[j]){                                                                       //if Circle B is covered by another Circle C
                     continue;                                                                      //Dont bother comparing against Circle A as if Circle B covers Circle A then Circle C will cover Circle A
                 }
+                if(i==j){ 
+                    continue; 
+                }
                 float XA = position.at(2*i);                                                       //Store information about Circle A
                 float YA = position.at((2*i)+1);
                 float lengthA = infoForShape.at(i);
@@ -97,6 +100,18 @@ int main()
             int minY = (int) position.at((2*i)+1) - infoForShape.at(i);
             int maxX = (int) (position.at(2*i)+infoForShape.at(i)+1);
             int maxY = (int) (position.at((2*i)+1)+infoForShape.at(i)+1);
+            if(minX<0){
+                minX = 0;
+            }
+            if(minY<0){
+                minX = 0;
+            }
+            if(maxX>horizontalExtentOfGrid-1){
+                maxX = horizontalExtentOfGrid-1;
+            }
+            if(maxY>verticalExtentOfGrid-1){
+                maxY = verticalExtentOfGrid-1;
+            }
             for(int X = minX; X < maxX; X++){                                                                 //for each grid unit in bounds
                 float deltaX = position.at(2*i) - X;
                 float deltaY = position.at((2*i)+1) - Y;
