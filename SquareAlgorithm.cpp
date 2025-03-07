@@ -61,7 +61,7 @@ int main()
                 float XB = position.at(2*j);                                                       //Store information about Square B
                 float YB = position.at((2*j)+1);
                 float lengthB = infoForShape.at(j);
-                if((XA>XB)&&(YA>YB)&&(ZA<ZB)&&(XA+lengthA<XB+lengthB)&&(YA+lengthA<YB+lengthB)){//if Square A is covered by square B
+                if((XA>XB)&&(YA>YB)&&(XA+lengthA<XB+lengthB)&&(YA+lengthA<YB+lengthB)){//if Square A is covered by square B
                     cull.at(i) = true;                                                            //Dont draw Square A (Square A is culled)
                 }
             }
