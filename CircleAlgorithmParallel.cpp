@@ -101,13 +101,11 @@ void sequetialCullingAlgorithmJRange(int i, int j, int k){
     }
 }
 void CircleJContainsI(int i, int j){
-    float XA = position.at(3*i);                                                       //Store information about Circle A
-    float YA = position.at((3*i)+1);
-    float ZA = position.at((3*i)+2);
+    float XA = position.at(2*i);                                                       //Store information about Circle A
+    float YA = position.at((2*i)+1);
                 
-    float XB = position.at(3*j);                                                       //Store information about Circle B
-    float YB = position.at((3*j)+1);
-    float ZB = position.at((3*j)+2);
+    float XB = position.at(2*j);                                                       //Store information about Circle B
+    float YB = position.at((2*j)+1);
     float radiusB = infoForShape.at(j);
     float deltaX = XB - XA;
     float deltaY = YB - YA;
@@ -194,8 +192,8 @@ void sequetialDrawingAlgorithmYRange(int i, int X, int Y, int k){
     }
 }
 void drawXY(int i, int X, int Y){
-    float deltaX = position.at(3*i) - X;
-    float deltaY = position.at((3*i)+1) - Y;
+    float deltaX = position.at(2*i) - X;
+    float deltaY = position.at((2*i)+1) - Y;
     isFilled.at(Y).at(X).store(Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i));        //this grid unit is filled if the magnitude of the x and y displacement from the center of the circle is less than the radius of the circle
 }
 
@@ -221,7 +219,7 @@ int main()
     //Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
     infoForShape.resize(numberOfShapesToRender);
     //Initialize Positon Array
-    position.resize(numberOfShapesToRender*3);
+    position.resize(numberOfShapesToRender*2);
     //Initialize Cull Array
     cull.assign(numberOfShapesToRender, false);
     //Read in number of threads to use from stdin
@@ -229,9 +227,8 @@ int main()
     //Read in information on dimensions of each shape (radius of each circle) followed by its X, Y, and Z coordinates from stdin
     for(int i = 0; i < numberOfShapesToRender; i++){
         cin >> infoForShape.at(i);     //Read in information on dimensions (radius)
-        cin >> position.at(3*i);       //Read in X coordinate
-        cin >> position.at((3*i)+1);   //Read in Y coordinate
-        cin >> position.at((3*i)+2);   //Read in Z coordinate
+        cin >> position.at(2*i);       //Read in X coordinate
+        cin >> position.at((2*i)+1);   //Read in Y coordinate
     }
     
     //-----Begin Processing-----
@@ -300,7 +297,7 @@ int main()
                 int sideLength = sideLengths.at(index++);
                 int numCalculations = sideLength*sideLength;
                 float fractionThreads = (numCalculations*1.0)/maxCalculations;
-                threads.emplaceBack(distributeWorkDrawingAlgorithm, i, position.at(3*i), position.at((3*i)+1), sideLength, sideLength, ((int)(fractionThreads*numberThreads)));
+                threads.emplaceBack(distributeWorkDrawingAlgorithm, i, position.at(2*i), position.at((2*i)+1), sideLength, sideLength, ((int)(fractionThreads*numberThreads)));
             }
         }else{
             vector<thread> threads;
@@ -311,7 +308,7 @@ int main()
                     continue;
                 }
                 int sideLength = sideLengths.at(index++);
-                threads.emplaceBack(distributeWorkDrawingAlgorithm, i, position.at(3*i), position.at((3*i)+1), sideLength, sideLength, 0);
+                threads.emplaceBack(distributeWorkDrawingAlgorithm, i, position.at(2*i), position.at((2*i)+1), sideLength, sideLength, 0);
                 temp = i+1;
             }
             int head = 0;
@@ -321,7 +318,7 @@ int main()
                 }
                 int sideLength = sideLengths.at(index++);
                 threads.at(head).join();
-                threads.at(head++) = new thread(distributeWorkDrawingAlgorithm, i, position.at(3*i), position.at((3*i)+1), sideLength, sideLength, 0);
+                threads.at(head++) = new thread(distributeWorkDrawingAlgorithm, i, position.at(2*i), position.at((2*i)+1), sideLength, sideLength, 0);
             }
             for(auto& t: threads){//wait for all worker threads to finish
                 t.join();
