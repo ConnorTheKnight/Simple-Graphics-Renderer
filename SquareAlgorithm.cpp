@@ -94,6 +94,18 @@ int main()
             int minY = (int) position.at((2*i)+1);
             int maxX = (int) (position.at(2*i)+infoForShape.at(i)+1);
             int maxY = (int) (position.at((2*i)+1)+infoForShape.at(i)+1);
+            if(minX<0){
+                minX = 0;
+            }
+            if(minY<0){
+                minX = 0;
+            }
+            if(maxX>horizontalExtentOfGrid){
+                maxX = horizontalExtentOfGrid;
+            }
+            if(maxY>verticalExtentOfGrid){
+                maxY = verticalExtentOfGrid;
+            }
             for(int X = minX; X < maxX; X++){                          //for each grid unit in bounds
                 for(int Y = minY; Y < maxX; Y++){
                     isFilled[Y][X] = true;                          //this grid unit is filled
