@@ -55,6 +55,9 @@ int main()
                 if(cull[j]){                                                                   //if Square B is covered by another Square C
                     continue;                                                                   //Dont bother comparing against Square A as if Square B covers Square A then Square C will cover Square A
                 }
+                if(i==j){ 
+                    continue; 
+                }
                 float XA = position.at(2*i);                                                       //Store information about Square A
                 float YA = position.at((2*i)+1);
                 float widthA = infoForShape.at(2*i);
@@ -94,6 +97,18 @@ int main()
             int minY = (int) position.at((2*i)+1);
             int maxX = (int) (position.at(2*i)+infoForShape.at(2*i)+1);
             int maxY = (int) (position.at((2*i)+1)+infoForShape.at(2*i+1)+1);
+            if(minX<0){
+                minX = 0;
+            }
+            if(minY<0){
+                minX = 0;
+            }
+            if(maxX>horizontalExtentOfGrid-1){
+                maxX = horizontalExtentOfGrid-1;
+            }
+            if(maxY>verticalExtentOfGrid-1){
+                maxY = verticalExtentOfGrid-1;
+            }
             for(int X = minX; X < maxX; X++){                          //for each grid unit in bounds
                 for(int Y = minY; Y < maxX; Y++){
                     isFilled[Y][X] = true;                          //this grid unit is filled
