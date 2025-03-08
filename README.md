@@ -29,3 +29,17 @@ In the case that the number of threads remaining after assigning each thread to 
 ## Shared Resources
 Among the arrays which are shared between each thread, the arrays which store the information about each shape are never written to and as such threads can share access without having to worry about mutual exclusion. The remaining arrays which are shared and are written to during the concurrent algorithms use atomic read and atomic write operations to ensure that there are no undefined behaviors when the resource is being accessed.
 Experimental Results
+
+### Compilation and Execution Instruction
+
+## Compiling a Single C++ File
+To compile a **single C++ file**, use:
+```sh
+g++ -o output_filename source_file.cpp
+```
+
+## Input Format
+INT (Vertical Extent/Grid Limit)
+INT (Horizontal Extent/Grid Limit)
+INT (Number of Shapes)
+[LIST OF INT] (Shape Values)
