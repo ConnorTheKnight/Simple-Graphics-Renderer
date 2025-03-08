@@ -42,4 +42,17 @@ g++ -o output_filename source_file.cpp
 - INT (Vertical Extent/Grid Limit)
 - INT (Horizontal Extent/Grid Limit)
 - INT (Number of Shapes)
-- [LIST OF INT] (Shape Values)
+- X COORD for shape 1
+- Y COORD for shape 1
+- X COORD for shape 2
+- Y COORD for shape 2
+- ...
+
+Example:
+```sh
+10
+10
+1
+3
+4
+```
