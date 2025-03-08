@@ -106,11 +106,11 @@ int main()
             if(minY<0){
                 minX = 0;
             }
-            if(maxX>horizontalExtentOfGrid-1){
-                maxX = horizontalExtentOfGrid-1;
+            if(maxX>horizontalExtentOfGrid){
+                maxX = horizontalExtentOfGrid;
             }
-            if(maxY>verticalExtentOfGrid-1){
-                maxY = verticalExtentOfGrid-1;
+            if(maxY>verticalExtentOfGrid){
+                maxY = verticalExtentOfGrid;
             }
             for(int X = minX; X < maxX; X++){                                                                 //for each grid unit in bounds
                 float deltaX = position.at(2*i) - X;
