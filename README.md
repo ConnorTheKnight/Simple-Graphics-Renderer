@@ -35,18 +35,20 @@ Experimental Results
 ## Compiling a Single C++ File
 To compile a **single C++ file**, use:
 ```sh
-g++ -o output_filename source_file.cpp
+g++ -o output_filename CircleAlgorithmParallel.cpp
 ```
 
 ## Input Format
-- INT (Vertical Extent/Grid Limit)
-- INT (Horizontal Extent/Grid Limit)
-- INT (Number of Shapes)
-- X COORD for shape 1
-- Y COORD for shape 1
-- X COORD for shape 2
-- Y COORD for shape 2
-- ...
+```sh
+INT (Vertical Extent/Grid Limit)
+INT (Horizontal Extent/Grid Limit)
+INT (Number of Shapes)
+X COORD for shape 1
+Y COORD for shape 1
+X COORD for shape 2
+Y COORD for shape 2
+...
+```
 
 Example:
 ```sh
