@@ -39,7 +39,7 @@ g++ -o output_filename source_file.cpp
 ```
 
 ## Input Format
-INT (Vertical Extent/Grid Limit)
-INT (Horizontal Extent/Grid Limit)
-INT (Number of Shapes)
-[LIST OF INT] (Shape Values)
+- INT (Vertical Extent/Grid Limit)
+- INT (Horizontal Extent/Grid Limit)
+- INT (Number of Shapes)
+- [LIST OF INT] (Shape Values)
