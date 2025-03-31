@@ -37,7 +37,7 @@ int main()
         cin >> position.at((3*i)+1);   //Read in Y coordinate
         cin >> position.at((3*i)+2);   //Read in Z coordinate
     }
-    
+    a
     //-----Begin Processing-----
     /* Note that this is the part of the algorithm which will need concurrency to be implemneted efficiently*/
         //-----Culling Algorithim-----
