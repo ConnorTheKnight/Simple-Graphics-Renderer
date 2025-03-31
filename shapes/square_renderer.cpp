@@ -2,69 +2,67 @@
 
 using namespace std;
 
-void checkSquareCull(int i, int j, vector<float>& position, vector<float>& infoForShape, vector<bool>& cull) {
-    if (cull[j]) return;
-
-    float XA = position.at(3 * i);
-    float YA = position.at((3 * i) + 1);
-    float ZA = position.at((3 * i) + 2);
-    float lengthA = infoForShape.at(i);
-
-    float XB = position.at(3 * j);
-    float YB = position.at((3 * j) + 1);
-    float ZB = position.at((3 * j) + 2);
-    float lengthB = infoForShape.at(j);
-
-    if ((XA > XB) && (YA > YB) && (ZA < ZB) && (XA + lengthA < XB + lengthB) && (YA + lengthA < YB + lengthB)) {
-        lock_guard<mutex> lock(mtx);
-        cull.at(i) = true;
-    }
+// Check if square A is fully inside square B
+bool isSquareFullyInside(
+    float xA, float yA, float lenA,
+    float xB, float yB, float lenB
+) {
+    return (xA >= xB) && (yA >= yB) &&
+        (xA + lenA <= xB + lenB) &&
+        (yA + lenA <= yB + lenB);
 }
 
-void renderSquares(const vector<float>& shapeValues, int verticalExtentOfGrid, int horizontalExtentOfGrid, int numberOfShapes) {
-    vector<float> infoForShape(numberOfShapes);
-    vector<float> position(numberOfShapes * 3);
-    vector<bool> cull(numberOfShapes, false);
-    vector<vector<bool>> isFilled(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
+void renderSquares(const vector<float>& shapeValues, int gridHeight, int gridWidth, int numSquares) {
+    vector<float> lengths(numSquares);
+    vector<float> posX(numSquares), posY(numSquares);
+    vector<bool> culled(numSquares, false);
+    vector<vector<bool>> grid(gridHeight, vector<bool>(gridWidth, false));
 
-    for (int i = 0; i < numberOfShapes; i++) {
-        infoForShape[i] = shapeValues[i * 3];
-        position[3 * i] = shapeValues[i * 3 + 1];
-        position[3 * i + 1] = shapeValues[i * 3 + 2];
-        position[3 * i + 2] = 0; // Z coordinate not needed
+    // Parse square data
+    for (int i = 0; i < numSquares; ++i) {
+        lengths[i] = shapeValues[i * 3];
+        posX[i] = shapeValues[i * 3 + 1];
+        posY[i] = shapeValues[i * 3 + 2];
     }
 
-    vector<thread> threads;
-    for (int i = 0; i < numberOfShapes; i++) {
-        for (int j = 0; j < numberOfShapes && !cull[i]; j++) {
-            if (i != j) {
-                threads.emplace_back(checkSquareCull, i, j, ref(position), ref(infoForShape), ref(cull));
+    // Greedy culling: only cull a square if it's fully inside any already-retained square
+    vector<int> retainedIndices;
+    for (int i = 0; i < numSquares; ++i) {
+        bool shouldCull = false;
+        for (int j : retainedIndices) {
+            if (isSquareFullyInside(posX[i], posY[i], lengths[i], posX[j], posY[j], lengths[j])) {
+                shouldCull = true;
+                break;
             }
         }
-    }
-    for (auto& t : threads) {
-        t.join();
-    }
-
-    for (int i = 0; i < numberOfShapes; i++) {
-        if (cull[i]) continue;
-        int minX = max(0, (int)position[3 * i]);
-        int minY = max(0, (int)position[3 * i + 1]);
-        int maxX = min(horizontalExtentOfGrid, (int)(position[3 * i] + infoForShape[i] + 1));
-        int maxY = min(verticalExtentOfGrid, (int)(position[3 * i + 1] + infoForShape[i] + 1));
-
-        for (int X = minX; X < maxX; X++) {
-            for (int Y = minY; Y < maxY; Y++) {
-                if (X >= 0 && X < horizontalExtentOfGrid && Y >= 0 && Y < verticalExtentOfGrid) {
-                    isFilled[Y][X] = true;
-                }
-            }
+        if (!shouldCull) {
+            retainedIndices.push_back(i);
+        }
+        else {
+            culled[i] = true;
         }
     }
 
-    for (int Y = 0; Y < verticalExtentOfGrid; Y++) {
-        for (int X = 0; X < horizontalExtentOfGrid; X++) {
-            cout << (isFilled[Y][X] ? "[X]" : "[_]");
+    // Rasterize retained squares
+    for (int i = 0; i < numSquares; ++i) {
+        if (culled[i]) continue;
+
+        int minX = max(0, (int)floor(posX[i]));
+        int minY = max(0, (int)floor(posY[i]));
+        int maxX = min(gridWidth, (int)ceil(posX[i] + lengths[i]));
+        int maxY = min(gridHeight, (int)ceil(posY[i] + lengths[i]));
+
+        for (int y = minY; y < maxY; ++y) {
+            for (int x = minX; x < maxX; ++x) {
+                grid[y][x] = true;
+            }
+        }
+    }
+
+    // Output grid
+    for (int y = 0; y < gridHeight; ++y) {
+        for (int x = 0; x < gridWidth; ++x) {
+            cout << (grid[y][x] ? "[X]" : "[_]");
         }
         cout << "\n";
     }
