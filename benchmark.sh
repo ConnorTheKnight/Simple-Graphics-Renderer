@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# Number of benchmark runs for each program.
 iterations=5
-
-# Default names of your source files and executables.
 cpp1="CircleAlgorithm.cpp"
 cpp2="CircleAlgorithmParallel.cpp"
 exe1="CircleSequential"
 exe2="CircleParallel"
-input_file="SampeInput100Shapes.txt"
+input_file="./inputs/Input5.txt"
 build_dir="./builds"
 
-# Parse command-line flags to override defaults.
+# Global variable to hold the average runtime
+avg_time_ns=0
+
+# Handle CLI overrides
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --cpp1) cpp1="$2"; shift ;;
@@ -23,45 +23,60 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-# Create the builds directory if it doesn't exist.
 mkdir -p "$build_dir"
 
-# Compile the first C++ file.
-g++ -O2 -o "$build_dir/$exe1" "$cpp1"
-if [ $? -ne 0 ]; then
-  echo "Compilation of $cpp1 failed."
-  exit 1
+# Use gdate for nanosecond timing on macOS
+if command -v gdate &> /dev/null; then
+  date_cmd="gdate"
+else
+  date_cmd="date"
 fi
 
-# Compile the second C++ file.
-g++ -O2 -o "$build_dir/$exe2" "$cpp2"
-if [ $? -ne 0 ]; then
-  echo "Compilation of $cpp2 failed."
-  exit 1
+# Compile the programs
+g++ -std=c++23 -O2 -o "$build_dir/$exe1" "$cpp1" || { echo "Compilation of $cpp1 failed."; exit 1; }
+g++ -std=c++23 -O2 -o "$build_dir/$exe2" "$cpp2" || { echo "Compilation of $cpp2 failed."; exit 1; }
+
+benchmark_program() {
+  local exe=$1
+  local label=$2
+  local total_time_ns=0
+
+  echo "Benchmarking $label for $iterations runs (nanoseconds)..."
+  for ((i=1; i<=iterations; i++)); do
+    start_time=$($date_cmd +%s%N | sed 's/[^0-9]//g')
+    "$build_dir/$exe" < "$input_file" > /dev/null 2>&1
+    end_time=$($date_cmd +%s%N | sed 's/[^0-9]//g')
+    elapsed_ns=$((end_time - start_time))
+    elapsed_sec=$(echo "scale=9; $elapsed_ns / 1000000000" | bc)
+    
+    echo "Run $i: ${elapsed_ns} ns (${elapsed_sec} s)"
+    total_time_ns=$((total_time_ns + elapsed_ns))
+  done
+
+  avg_time_ns=$((total_time_ns / iterations))
+  avg_time_sec=$(echo "scale=9; $avg_time_ns / 1000000000" | bc)
+  echo "Average time for $label: $avg_time_ns ns (${avg_time_sec} s)"
+  echo
+}
+
+# Run both benchmarks
+benchmark_program "$exe1" "$exe1"
+avg1=$avg_time_ns
+
+benchmark_program "$exe2" "$exe2"
+avg2=$avg_time_ns
+
+# Compare performance
+if [ "$avg1" -gt "$avg2" ]; then
+  time_saved=$((avg1 - avg2))
+  time_saved_sec=$(echo "scale=9; $time_saved / 1000000000" | bc)
+  percent_saved=$(echo "scale=2; 100 * $time_saved / $avg1" | bc)
+  echo "✅ $exe2 is faster than $exe1 by $time_saved ns (${time_saved_sec} s) ($percent_saved% time saved)"
+elif [ "$avg2" -gt "$avg1" ]; then
+  time_saved=$((avg2 - avg1))
+  time_saved_sec=$(echo "scale=9; $time_saved / 1000000000" | bc)
+  percent_saved=$(echo "scale=2; 100 * $time_saved / $avg2" | bc)
+  echo "✅ $exe1 is faster than $exe2 by $time_saved ns (${time_saved_sec} s) ($percent_saved% time saved)"
+else
+  echo "⚖️  Both programs have the same average runtime."
 fi
-
-echo "Benchmarking $exe1 for $iterations runs (nanoseconds)..."
-total_time1=0
-for ((i=1; i<=iterations; i++)); do
-    start=$(date +%s%N)
-    "$build_dir/$exe1" < "$input_file" > /dev/null 2>&1
-    end=$(date +%s%N)
-    elapsed=$(( end - start ))
-    echo "Run $i: $elapsed ns"
-    total_time1=$(( total_time1 + elapsed ))
-done
-avg_time1=$(( total_time1 / iterations ))
-echo "Average time for $exe1: $avg_time1 ns"
-
-echo "Benchmarking $exe2 for $iterations runs (nanoseconds)..."
-total_time2=0
-for ((i=1; i<=iterations; i++)); do
-    start=$(date +%s%N)
-    "$build_dir/$exe2" < "$input_file" > /dev/null 2>&1
-    end=$(date +%s%N)
-    elapsed=$(( end - start ))
-    echo "Run $i: $elapsed ns"
-    total_time2=$(( total_time2 + elapsed ))
-done
-avg_time2=$(( total_time2 / iterations ))
-echo "Average time for $exe2: $avg_time2 ns"
