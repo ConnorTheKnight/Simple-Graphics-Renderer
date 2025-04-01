@@ -77,7 +77,7 @@ elif [ "$avg2" -gt "$avg1" ]; then
   time_saved=$((avg2 - avg1))
   time_saved_sec=$(echo "scale=9; $time_saved / 1000000000" | bc)
   percent_saved=$(echo "scale=2; 100 * $time_saved / $avg2" | bc)
-  echo "✅ $exe1 is faster than $exe2 by $time_saved ns (${time_saved_sec} s) ($percent_saved% time saved)"
+  echo "❌ $exe1 is faster than $exe2 by $time_saved ns (${time_saved_sec} s) ($percent_saved% time saved)"
 else
   echo "⚖️  Both programs have the same average runtime."
 fi
