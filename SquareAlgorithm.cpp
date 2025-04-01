@@ -30,6 +30,9 @@ int main()
     position.resize(numberOfShapesToRender*2);
     //Initialize Cull Array
     cull.assign(numberOfShapesToRender, false);
+    //Read in number of threads from stdin to be compatible with input formatting
+    int unused;
+    cin >> unused;
     //Read in information on dimensions of each shape (sidelength of each square) followed by its X, Y, and Z coordinates from stdin
     for(int i = 0; i < numberOfShapesToRender; i++){
         cin >> infoForShape.at(i);     //Read in information on dimensions (sidelength)

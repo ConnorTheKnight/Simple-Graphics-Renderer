@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
@@ -30,6 +31,9 @@ int main()
     position.resize(numberOfShapesToRender*2);
     //Initialize Cull Array
     cull.assign(numberOfShapesToRender, false);
+    //Read in number of threads from stdin to be compatible with input formatting
+    int unused;
+    cin >> unused;
     //Read in information on dimensions of each shape (radius of each circle) followed by its X, Y, and Z coordinates from stdin
     for(int i = 0; i < numberOfShapesToRender; i++){
         cin >> infoForShape.at(i);     //Read in information on dimensions (radius)
@@ -66,7 +70,7 @@ int main()
                 float lengthB = infoForShape.at(j);
                 float deltaX = XB - XA;
                 float deltaY = YB - YA;
-                if(Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(j)){                //if Circle A is covered by circle B
+                if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(j)){                //if Circle A is covered by circle B
                     cull.at(i) = true;                                                            //Dont draw Circle A (Circle A is culled)
                 }
             }
@@ -114,9 +118,9 @@ int main()
             }
             for(int X = minX; X < maxX; X++){                                                                 //for each grid unit in bounds
                 float deltaX = position.at(2*i) - X;
-                float deltaY = position.at((2*i)+1) - Y;
                 for(int Y = minX; Y < maxX; Y++){
-                    isFilled[Y][X] = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i);        //this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
+                    float deltaY = position.at((2*i)+1) - Y;
+                    isFilled[Y][X] = sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i);        //this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
                 }
             }
         }
