@@ -18,6 +18,7 @@ while [[ "$#" -gt 0 ]]; do
     --cpp2) cpp2="$2"; shift ;;
     --exe1) exe1="$2"; shift ;;
     --exe2) exe2="$2"; shift ;;
+    --input) input_file="$2"; shift ;;
     *) echo "Unknown parameter passed: $1"; exit 1 ;;
   esac
   shift
