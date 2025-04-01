@@ -280,26 +280,32 @@ int main()
             if(cull[i].load()){
                 continue;
             }
-            int sideLengthX = ((int)(infoForShape.at(i)+1))<<1;
-            int sideLengthY = sideLengthX;
-            int X = position.at(2*i)-(sideLengthX>>1);
-            int Y = position.at((2*i)+1)-(sideLengthY>>1);
-            if(X<0){
-                sideLengthX -= X;
-                X = 0;
+            int maxX = position.at(2*i) + infoForShape.at(i);
+            int minX = position.at(2*i) - infoForShape.at(i);
+            int maxY = position.at((2*i)+1) + infoForShape.at(i);
+            int minY = position.at((2*i)+1) - infoForShape.at(i);
+            maxX++;
+            maxY++;
+            minX--;
+            minY--;
+            if(minX<0){
+                minX = 0;
             }
-            if(Y<0){
-                sideLengthY -= Y;
-                Y = 0;
+            if(minY<0){
+                minY = 0;
             }
-            if(X+sideLengthX>horizontalExtentOfGrid){
-                sideLengthX = horizontalExtentOfGrid-X;
+            if(maxX>horizontalExtentOfGrid){
+                maxX = horizontalExtentOfGrid;
             }
-            if(Y+sideLengthY>verticalExtentOfGrid){
-                sideLengthY = horizontalExtentOfGrid-Y;
+            if(maxY>horizontalExtentOfGrid){
+                maxY = horizontalExtentOfGrid;
             }
-            XYsideLengthXsideLengthY.emplace_back(X);
-            XYsideLengthXsideLengthY.emplace_back(Y);
+            maxX++;
+            maxY++;
+            int sideLengthX = maxX-minX;
+            int sideLengthY = maxY-minY;
+            XYsideLengthXsideLengthY.emplace_back(minX);
+            XYsideLengthXsideLengthY.emplace_back(minY);
             XYsideLengthXsideLengthY.emplace_back(sideLengthX);
             XYsideLengthXsideLengthY.emplace_back(sideLengthY);
             maxCalculations += sideLengthX*sideLengthY;

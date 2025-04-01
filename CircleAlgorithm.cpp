@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
+#include <math.h>
 
 using namespace std;
 
@@ -70,7 +70,7 @@ int main()
                 float lengthB = infoForShape.at(j);
                 float deltaX = XB - XA;
                 float deltaY = YB - YA;
-                if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(j)){                //if Circle A is covered by circle B
+                if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape[i]+infoForShape[j]&&infoForShape[i]<infoForShape[j]){                //if Circle A is covered by circle B
                     cull.at(i) = true;                                                            //Dont draw Circle A (Circle A is culled)
                 }
             }
@@ -108,7 +108,7 @@ int main()
                 minX = 0;
             }
             if(minY<0){
-                minX = 0;
+                minY = 0;
             }
             if(maxX>horizontalExtentOfGrid){
                 maxX = horizontalExtentOfGrid;
@@ -118,9 +118,11 @@ int main()
             }
             for(int X = minX; X < maxX; X++){                                                                 //for each grid unit in bounds
                 float deltaX = position.at(2*i) - X;
-                for(int Y = minX; Y < maxX; Y++){
+                for(int Y = minY; Y < maxY; Y++){
                     float deltaY = position.at((2*i)+1) - Y;
-                    isFilled[Y][X] = sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i);        //this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
+                    if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i)){
+                        isFilled[Y][X] = true;   //this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
+                    }
                 }
             }
         }
