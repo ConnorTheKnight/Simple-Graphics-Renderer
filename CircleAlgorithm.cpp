@@ -12,8 +12,8 @@ int main()
     int numberOfShapesToRender = 0;         //Store number of shapes to be provided for rendering
     vector<float> infoForShape;             //Store information on the size of each shape (for now only circles are being considered and thus only radius is needed)
     vector<float> position;                 //Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the circle [Note: Bottom = minimum Y value, Left = minimum X value])
-    vector<bool> cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
-    vector<vector<bool>> isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
+    bool* cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
+    bool** isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
     
     
     //-----Read User Input-----
@@ -22,7 +22,11 @@ int main()
     //Read in number of horizontal grid units from stdin
     cin >> horizontalExtentOfGrid;
     //Initialize isFilled Array
-    isFilled.assign(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
+    //isFilled.assign(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
+    isFilled = new bool*[verticalExtentOfGrid];
+    for(int i = 0; i < verticalExtentOfGrid; i++){
+        isFilled[i] = new bool[horizontalExtentOfGrid];
+    }
     //Read in number of shapes to render from stdin
     cin >> numberOfShapesToRender;
     //Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
@@ -30,15 +34,16 @@ int main()
     //Initialize Positon Array
     position.resize(numberOfShapesToRender*2);
     //Initialize Cull Array
-    cull.assign(numberOfShapesToRender, false);
+    //cull.assign(numberOfShapesToRender, false);
+    cull = new bool[numberOfShapesToRender];
     //Read in number of threads from stdin to be compatible with input formatting
     int unused;
     cin >> unused;
     //Read in information on dimensions of each shape (radius of each circle) followed by its X, Y, and Z coordinates from stdin
     for(int i = 0; i < numberOfShapesToRender; i++){
-        cin >> infoForShape.at(i);     //Read in information on dimensions (radius)
-        cin >> position.at(2*i);       //Read in X coordinate
-        cin >> position.at((2*i)+1);   //Read in Y coordinate
+        cin >> infoForShape[i];     //Read in information on dimensions (radius)
+        cin >> position[2*i];       //Read in X coordinate
+        cin >> position[(2*i)+1];   //Read in Y coordinate
     }
     
     //-----Begin Processing-----
@@ -54,24 +59,24 @@ int main()
         [Another potential optimization is to store nearby shapes in some kind of buffer so that shapes very far apart do not need to be compared]
         */
         for(int i = 0; i < numberOfShapesToRender; i++){                                           //for each Circle A
-            for(int j = 0; j < numberOfShapesToRender&&!cull.at(i); j++){                          //for each Circle B (Skip further comparisons if Circle A has already been covered)
+            for(int j = 0; j < numberOfShapesToRender&&!cull[i]; j++){                          //for each Circle B (Skip further comparisons if Circle A has already been covered)
                 if(cull[j]){                                                                       //if Circle B is covered by another Circle C
                     continue;                                                                      //Dont bother comparing against Circle A as if Circle B covers Circle A then Circle C will cover Circle A
                 }
                 if(i==j){ 
                     continue; 
                 }
-                float XA = position.at(2*i);                                                       //Store information about Circle A
-                float YA = position.at((2*i)+1);
-                float lengthA = infoForShape.at(i);
+                float XA = position[2*i];                                                       //Store information about Circle A
+                float YA = position[(2*i)+1];
+                float lengthA = infoForShape[i];
                 
-                float XB = position.at(2*j);                                                       //Store information about Circle B
-                float YB = position.at((2*j)+1);
-                float lengthB = infoForShape.at(j);
+                float XB = position[2*j];                                                       //Store information about Circle B
+                float YB = position[(2*j)+1];
+                float lengthB = infoForShape[j];
                 float deltaX = XB - XA;
                 float deltaY = YB - YA;
                 if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape[i]+infoForShape[j]&&infoForShape[i]<infoForShape[j]){                //if Circle A is covered by circle B
-                    cull.at(i) = true;                                                            //Dont draw Circle A (Circle A is culled)
+                    cull[i] = true;                                                            //Dont draw Circle A (Circle A is culled)
                 }
             }
         }                                                                                       
@@ -97,13 +102,13 @@ int main()
         [Note: this might be able to be sped up by using a Data structure to avoid running a check on every single circle]
         */
         for(int i = 0; i < numberOfShapesToRender; i++){
-            if(cull.at(i)){                                                                                //if shape has been culled by culling algorithim
+            if(cull[i]){                                                                                //if shape has been culled by culling algorithim
                 continue;                                                                                  //Do not evaluate
             }
-            int minX = (int) position.at(2*i) - infoForShape.at(i);                                        //get bounds of Shape in terms of grid units (integers)
-            int minY = (int) position.at((2*i)+1) - infoForShape.at(i);
-            int maxX = (int) (position.at(2*i)+infoForShape.at(i)+1);
-            int maxY = (int) (position.at((2*i)+1)+infoForShape.at(i)+1);
+            int minX = (int) position[2*i] - infoForShape[i];                                        //get bounds of Shape in terms of grid units (integers)
+            int minY = (int) position[(2*i)+1] - infoForShape[i];
+            int maxX = (int) position[2*i]+infoForShape[i]+1;
+            int maxY = (int) position[(2*i)+1]+infoForShape[i]+1;
             if(minX<0){
                 minX = 0;
             }
@@ -117,10 +122,10 @@ int main()
                 maxY = verticalExtentOfGrid;
             }
             for(int X = minX; X < maxX; X++){                                                                 //for each grid unit in bounds
-                float deltaX = position.at(2*i) - X;
+                float deltaX = position[2*i] - X;
                 for(int Y = minY; Y < maxY; Y++){
-                    float deltaY = position.at((2*i)+1) - Y;
-                    if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i)){
+                    float deltaY = position[(2*i)+1] - Y;
+                    if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape[i]){
                         isFilled[Y][X] = true;   //this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
                     }
                 }
@@ -141,6 +146,10 @@ int main()
         }
         cout << "\n";
     }
-    
+    delete[] cull;
+    for(int i = 0; i < verticalExtentOfGrid; i++){
+        delete[] isFilled[i];
+    }
+    delete[] isFilled;
     return 0;
 }

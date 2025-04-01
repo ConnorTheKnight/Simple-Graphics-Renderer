@@ -14,22 +14,22 @@ void CircleJContainsI(int i, int j){
     if(i==j){
         return;
     }
-    float XA = position.at(2*i);                                                       //Store information about Circle A
+    /*float XA = position.at(2*i);                                                       //Store information about Circle A
     float YA = position.at((2*i)+1);
                 
     float XB = position.at(2*j);                                                       //Store information about Circle B
     float YB = position.at((2*j)+1);
     float radiusA = infoForShape.at(i);
     float radiusB = infoForShape.at(j);
-    float deltaX = XB - XA;
-    float deltaY = YB - YA;
-    if((int)(deltaX*deltaX)<=0&&(int)(deltaY*deltaY)<=0&&(int)((radiusA-radiusB)*(radiusA-radiusB))<=0){
+    float deltaX = (position.at(2*j) - position.at(2*i));
+    float deltaY = (position.at((2*j)+1) - position.at((2*i)+1));*/
+    if((int)((position.at(2*j) - position.at(2*i))*(position.at(2*j) - position.at(2*i)))<=0&&(int)((position.at((2*j)+1) - position.at((2*i)+1))*(position.at((2*j)+1) - position.at((2*i)+1)))<=0&&(int)((infoForShape.at(i)-infoForShape.at(j))*(infoForShape.at(i)-infoForShape.at(j)))<=0){
         if(i<j){
         cull[i].store(true);
         }
         return;
     }
-    if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusB+radiusA&&radiusA<radiusB){//if Circle A is covered by circle B if the magnitude of the x and y distance of the center of the inner circle from the center of the outer circle  
+    if(sqrt(((position.at(2*j) - position.at(2*i))*(position.at(2*j) - position.at(2*i)))+((position.at((2*j)+1) - position.at((2*i)+1))*(position.at((2*j)+1) - position.at((2*i)+1))))<infoForShape.at(j)+infoForShape.at(i)&&infoForShape.at(i)<infoForShape.at(j)){//if Circle A is covered by circle B if the magnitude of the x and y distance of the center of the inner circle from the center of the outer circle  
         cull[i].store(true);                                                            //Dont draw Circle A (Circle A is culled)
     }
 }
@@ -266,7 +266,7 @@ int main()
         a concurrent queue or other shared data structure.
         */
         distributeWorkCullingAlgorithm(numberOfShapesToRender,numberOfShapesToRender,numberThreads);
-        
+
         //All remaining false values in the cull Array represent circles that are at least in part uncovered (need to be drawn)
 
         //-----Fairness Algorithm-----
@@ -280,14 +280,10 @@ int main()
             if(cull[i].load()){
                 continue;
             }
-            int maxX = position.at(2*i) + infoForShape.at(i);
-            int minX = position.at(2*i) - infoForShape.at(i);
-            int maxY = position.at((2*i)+1) + infoForShape.at(i);
-            int minY = position.at((2*i)+1) - infoForShape.at(i);
-            maxX++;
-            maxY++;
-            minX--;
-            minY--;
+            int maxX = position.at(2*i) + infoForShape.at(i) + 1;
+            int minX = position.at(2*i) - infoForShape.at(i) - 1;
+            int maxY = position.at((2*i)+1) + infoForShape.at(i) + 1;
+            int minY = position.at((2*i)+1) - infoForShape.at(i) - 1;
             if(minX<0){
                 minX = 0;
             }
@@ -300,8 +296,6 @@ int main()
             if(maxY>horizontalExtentOfGrid){
                 maxY = horizontalExtentOfGrid;
             }
-            maxX++;
-            maxY++;
             int sideLengthX = maxX-minX;
             int sideLengthY = maxY-minY;
             XYsideLengthXsideLengthY.emplace_back(minX);
@@ -395,6 +389,8 @@ int main()
         }
         cout << "\n";
     }
+
+
     delete[] cull;
     for(int i = 0; i < verticalExtentOfGrid; i++){
         delete[] isFilled[i];
