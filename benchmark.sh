@@ -5,7 +5,7 @@ cpp1="CircleAlgorithm.cpp"
 cpp2="CircleAlgorithmParallel.cpp"
 exe1="CircleSequential"
 exe2="CircleParallel"
-input_file="./inputs/Input5.txt"
+input_file="./inputs/Input11.txt"
 build_dir="./builds"
 
 # Global variable to hold the average runtime
@@ -34,8 +34,8 @@ else
 fi
 
 # Compile the programs
-g++ -std=c++23 -O2 -o "$build_dir/$exe1" "$cpp1" || { echo "Compilation of $cpp1 failed."; exit 1; }
-g++ -std=c++23 -O2 -o "$build_dir/$exe2" "$cpp2" || { echo "Compilation of $cpp2 failed."; exit 1; }
+g++ -O2 -pthread -o "$build_dir/$exe1" "$cpp1" || { echo "Compilation of $cpp1 failed."; exit 1; }
+g++ -O2 -pthread -o "$build_dir/$exe2" "$cpp2" || { echo "Compilation of $cpp2 failed."; exit 1; }
 
 benchmark_program() {
   local exe=$1

@@ -25,32 +25,76 @@ void CircleJContainsI(int i, int j){
     float deltaY = (position.at((2*j)+1) - position.at((2*i)+1));*/
     if((int)((position.at(2*j) - position.at(2*i))*(position.at(2*j) - position.at(2*i)))<=0&&(int)((position.at((2*j)+1) - position.at((2*i)+1))*(position.at((2*j)+1) - position.at((2*i)+1)))<=0&&(int)((infoForShape.at(i)-infoForShape.at(j))*(infoForShape.at(i)-infoForShape.at(j)))<=0){
         if(i<j){
-        cull[i].store(true);
+        cull[i].store(true,memory_order_relaxed);
         }
         return;
     }
     if(sqrt(((position.at(2*j) - position.at(2*i))*(position.at(2*j) - position.at(2*i)))+((position.at((2*j)+1) - position.at((2*i)+1))*(position.at((2*j)+1) - position.at((2*i)+1))))<infoForShape.at(j)+infoForShape.at(i)&&infoForShape.at(i)<infoForShape.at(j)){//if Circle A is covered by circle B if the magnitude of the x and y distance of the center of the inner circle from the center of the outer circle  
-        cull[i].store(true);                                                            //Dont draw Circle A (Circle A is culled)
+        cull[i].store(true,memory_order_relaxed);                                                            //Dont draw Circle A (Circle A is culled)
     }
 }
 void sequentialCullingAlgorithmJRange(int i, int j, int k){
     for(int index = j; index < k; index++){//for each circle j
-        if(cull[i].load()){//if other worker thread has already evaluated circle i to be culled
+        if(cull[i].load(memory_order_relaxed)){//if other worker thread has already evaluated circle i to be culled
             return;
         }
-        if(cull[index].load()){//if j has been culled
+        if(cull[index].load(memory_order_relaxed)){//if j has been culled
             continue;
         }
-        CircleJContainsI(i,index);
+        //---
+        if(i==index){
+            return;
+        }
+        /*float XA = position.at(2*i);                                                       //Store information about Circle A
+        float YA = position.at((2*i)+1);
+                    
+        float XB = position.at(2*index);                                                       //Store information about Circle B
+        float YB = position.at((2*index)+1);
+        float radiusA = infoForShape.at(i);
+        float radiusB = infoForShape.at(index);
+        float deltaX = (position.at(2*index) - position.at(2*i));
+        float deltaY = (position.at((2*index)+1) - position.at((2*i)+1));*/
+        if((int)((position.at(2*index) - position.at(2*i))*(position.at(2*index) - position.at(2*i)))<=0&&(int)((position.at((2*index)+1) - position.at((2*i)+1))*(position.at((2*index)+1) - position.at((2*i)+1)))<=0&&(int)((infoForShape.at(i)-infoForShape.at(index))*(infoForShape.at(i)-infoForShape.at(index)))<=0){
+            if(i<index){
+            cull[i].store(true,memory_order_relaxed);
+            }
+            return;
+        }
+        if(sqrt(((position.at(2*index) - position.at(2*i))*(position.at(2*index) - position.at(2*i)))+((position.at((2*index)+1) - position.at((2*i)+1))*(position.at((2*index)+1) - position.at((2*i)+1))))<infoForShape.at(index)+infoForShape.at(i)&&infoForShape.at(i)<infoForShape.at(index)){//if Circle A is covered by circle B if the magnitude of the x and y distance of the center of the inner circle from the center of the outer circle  
+            cull[i].store(true,memory_order_relaxed);                                                            //Dont draw Circle A (Circle A is culled)
+        }
+        //---
     }
 }
 void sequentialCullingAlgorithmIRange(int i, int k, int maxJ){
     for(int index1 = i; index1 < k; index1++){//for each circle i
         for(int index2 = 0; index2 < maxJ; index2++){
-            if(cull[index2].load()){//if j has been culled
+            if(cull[index2].load(memory_order_relaxed)){//if j has been culled
                 continue;
             }
-            CircleJContainsI(index1,index2);
+            //---
+            if(index1==index2){
+                return;
+            }
+            /*float XA = position.at(2*index1);                                                       //Store information about Circle A
+            float YA = position.at((2*index1)+1);
+                        
+            float XB = position.at(2*index2);                                                       //Store information about Circle B
+            float YB = position.at((2*index2)+1);
+            float radiusA = infoForShape.at(index1);
+            float radiusB = infoForShape.at(index2);
+            float deltaX = (position.at(2*index2) - position.at(2*index1));
+            float deltaY = (position.at((2*index2)+1) - position.at((2*index1)+1));*/
+            if((int)((position.at(2*index2) - position.at(2*i))*(position.at(2*index2) - position.at(2*index1)))<=0&&(int)((position.at((2*index2)+1) - position.at((2*i)+1))*(position.at((2*index2)+1) - position.at((2*index1)+1)))<=0&&(int)((infoForShape.at(index1)-infoForShape.at(index2))*(infoForShape.at(index1)-infoForShape.at(index2)))<=0){
+                if(index1<index2){
+                cull[index1].store(true,memory_order_relaxed);
+                }
+                return;
+            }
+            if(sqrt(((position.at(2*index2) - position.at(2*index1))*(position.at(2*index2) - position.at(2*index1)))+((position.at((2*index2)+1) - position.at((2*index1)+1))*(position.at((2*index2)+1) - position.at((2*index1)+1))))<infoForShape.at(index2)+infoForShape.at(index1)&&infoForShape.at(index1)<infoForShape.at(index2)){//if Circle A is covered by circle B if the magnitude of the x and y distance of the center of the inner circle from the center of the outer circle  
+                cull[index1].store(true,memory_order_relaxed);                                                            //Dont draw Circle A (Circle A is culled)
+            }
+            //---
         }
     }
 }
@@ -127,18 +171,26 @@ void drawXY(int i, int X, int Y){
     float deltaX = position.at(2*i) - X;
     float deltaY = position.at((2*i)+1) - Y;
     if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i)){
-        isFilled[Y][X].store(true);        //this grid unit is filled if the magnitude of the x and y displacement from the center of the circle is less than the radius of the circle
+        isFilled[Y][X].store(true,memory_order_relaxed);        //this grid unit is filled if the magnitude of the x and y displacement from the center of the circle is less than the radius of the circle
     }
 }
 void sequentialDrawingAlgorithmYRange(int i, int X, int Y, int k){
     for(int index = Y; index < k; index++){//for each circle j
-        drawXY(i,X,index);
+        float deltaX = position.at(2*i) - X;
+        float deltaY = position.at((2*i)+1) - index;
+        if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i)){
+            isFilled[index][X].store(true,memory_order_relaxed);        //this grid unit is filled if the magnitude of the x and y displacement from the center of the circle is less than the radius of the circle
+        }
     }
 }
 void sequentialDrawingAlgorithmXRange(int i, int X, int k, int Y, int deltaY){
     for(int index1 = X; index1 < k; index1++){//for each circle i
         for(int index2 = 0; index2 < deltaY; index2++){
-            drawXY(i,index1,Y+index2);
+            float deltaX = position.at(2*i) - index1;
+            float deltaY = position.at((2*i)+1) - (Y+index2);
+            if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<infoForShape.at(i)){
+                isFilled[Y+index2][index1].store(true,memory_order_relaxed);        //this grid unit is filled if the magnitude of the x and y displacement from the center of the circle is less than the radius of the circle
+            }
         }
     }
 }
@@ -328,7 +380,7 @@ int main()
             vector<thread> threads;
             int index = 0;
             for(int i = 0; i < numberOfShapesToRender; i++){
-                if(cull[i].load()){
+                if(cull[i].load(memory_order_relaxed)){
                     continue;
                 }
                 int boundX = XYsideLengthXsideLengthY.at(index++);
@@ -347,28 +399,28 @@ int main()
             int index = 0;
             int temp = 0;
             for(int i = 0; i < numberOfShapesToRender&&index<numberThreads; i++){
-                if(cull[i].load()){
+                if(cull[i].load(memory_order_relaxed)){
                     continue;
                 }
-                int boundX = XYsideLengthXsideLengthY.at(index++);
-                int boundY = XYsideLengthXsideLengthY.at(index++);
-                int sideLengthX = XYsideLengthXsideLengthY.at(index++);
-                int sideLengthY = XYsideLengthXsideLengthY.at(index++);
-                threads.emplace_back(distributeWorkDrawingAlgorithm, i, boundX, boundY, sideLengthX, sideLengthY, 0);
+                int boundX = XYsideLengthXsideLengthY.at(index<<2);
+                int boundY = XYsideLengthXsideLengthY.at((index<<2)+1);
+                int sideLengthX = XYsideLengthXsideLengthY.at((index<<2)+2);
+                int sideLengthY = XYsideLengthXsideLengthY.at((index++<<2)+3);
+                threads.emplace_back(sequentialDrawingAlgorithmXRange, i, boundX, sideLengthX, boundY, sideLengthY);
                 temp = i+1;
             }
             int head = 0;
             for(int i = temp; i < numberOfShapesToRender; i++){
-                if(cull[i].load()){
+                if(cull[i].load(memory_order_relaxed)){
                     continue;
                 }
-                int boundX = XYsideLengthXsideLengthY.at(index++);
-                int boundY = XYsideLengthXsideLengthY.at(index++);
-                int sideLengthX = XYsideLengthXsideLengthY.at(index++);
-                int sideLengthY = XYsideLengthXsideLengthY.at(index++);
-                threads.at(head).join();
-                threads.erase(std::next(threads.begin(),head));
-                threads.emplace(std::next(threads.begin(),head++),distributeWorkDrawingAlgorithm, i, boundX, boundY, sideLengthX, sideLengthY, 0);
+                int boundX = XYsideLengthXsideLengthY.at(index<<2);
+                int boundY = XYsideLengthXsideLengthY.at((index<<2)+1);
+                int sideLengthX = XYsideLengthXsideLengthY.at((index<<2)+2);
+                int sideLengthY = XYsideLengthXsideLengthY.at((index++<<2)+3);
+                threads.at(head%numberThreads).join();
+                threads.erase(std::next(threads.begin(),head%numberThreads));
+                threads.emplace(std::next(threads.begin(),head++%numberThreads),sequentialDrawingAlgorithmXRange, i, boundX, sideLengthX, boundY, sideLengthY);
             }
             for(auto& t: threads){//wait for all worker threads to finish
                 t.join();
@@ -381,7 +433,7 @@ int main()
     /*All the data needed for the output is stored in the isFilled array, for the sake of visualization this array will be printed to stdout in O(n*m) time*/
     for(int Y = 0; Y < verticalExtentOfGrid; Y++){          //for each unit of the grid
         for(int X = 0; X < horizontalExtentOfGrid; X++){
-            if((isFilled[Y])[X]){                             //if the gridUnit is filled
+            if((isFilled[Y])[X].load(memory_order_relaxed)){                             //if the gridUnit is filled
                 cout << "[X]";                              //print X in the cell
             }else{                                          //else
                 cout << "[_]";                              //print _ in the cell
