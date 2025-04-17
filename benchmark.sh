@@ -5,7 +5,7 @@ cpp1="shapes/CircleAlgorithm.cpp"
 cpp2="shapes/CircleAlgorithmParallel.cpp"
 exe1="CircleSequential"
 exe2="CircleParallel"
-input_file="./inputs/Input11.txt"
+input_file="./inputs/Input3.txt"
 build_dir="./builds"
 
 # Global variable to hold the average runtime
@@ -34,8 +34,11 @@ else
 fi
 
 # Compile the programs
-g++ -O2 -pthread -o "$build_dir/$exe1" "$cpp1" || { echo "Compilation of $cpp1 failed."; exit 1; }
-g++ -O2 -pthread -o "$build_dir/$exe2" "$cpp2" || { echo "Compilation of $cpp2 failed."; exit 1; }
+# Default to C++17 but allow override with CPP_STD environment variable
+cpp_std=${CPP_STD:-c++17}
+echo "Using C++ standard: $cpp_std"
+g++ -std=$cpp_std -O2 -pthread -o "$build_dir/$exe1" "$cpp1" || { echo "Compilation of $cpp1 failed."; exit 1; }
+g++ -std=$cpp_std -O2 -pthread -o "$build_dir/$exe2" "$cpp2" || { echo "Compilation of $cpp2 failed."; exit 1; }
 
 benchmark_program() {
   local exe=$1

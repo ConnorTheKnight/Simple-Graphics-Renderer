@@ -7,80 +7,86 @@ using namespace std;
 int main()
 {
     //-----Declare Variables-----
-    int verticalExtentOfGrid = 0;           //Store number of vertical grid units (number of rows)
-    int horizontalExtentOfGrid = 0;         //Store number of horizontal grid units (number of columns) 
-    int numberOfShapesToRender = 0;         //Store number of shapes to be provided for rendering
-    vector<float> infoForShape;             //Store information on the size of each shape (for now only circles are being considered and thus only radius is needed)
-    vector<float> position;                 //Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the circle [Note: Bottom = minimum Y value, Left = minimum X value])
-    bool* cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
-    bool** isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
-
+    int verticalExtentOfGrid = 0;   // Store number of vertical grid units (number of rows)
+    int horizontalExtentOfGrid = 0; // Store number of horizontal grid units (number of columns)
+    int numberOfShapesToRender = 0; // Store number of shapes to be provided for rendering
+    vector<float> infoForShape;     // Store information on the size of each shape (for now only circles are being considered and thus only radius is needed)
+    vector<float> position;         // Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the circle [Note: Bottom = minimum Y value, Left = minimum X value])
+    bool *cull;                     // Store whether or not to draw a given shape (output of culling algorithm)
+    bool **isFilled;                // Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
 
     //-----Read User Input-----
-    //Read in number of vertical grid units from stdin
+    // Read in number of vertical grid units from stdin
     cin >> verticalExtentOfGrid;
-    //Read in number of horizontal grid units from stdin
+    // Read in number of horizontal grid units from stdin
     cin >> horizontalExtentOfGrid;
-    //Initialize isFilled Array
-    //isFilled.assign(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
-    isFilled = new bool* [verticalExtentOfGrid];
-    for (int i = 0; i < verticalExtentOfGrid; i++) {
+    // Initialize isFilled Array
+    // isFilled.assign(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
+    isFilled = new bool *[verticalExtentOfGrid];
+    for (int i = 0; i < verticalExtentOfGrid; i++)
+    {
         isFilled[i] = new bool[horizontalExtentOfGrid];
     }
-    //Read in number of shapes to render from stdin
+    // Read in number of shapes to render from stdin
     cin >> numberOfShapesToRender;
-    //Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
+    // Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
     infoForShape.resize(numberOfShapesToRender);
-    //Initialize Positon Array
+    // Initialize Positon Array
     position.resize(numberOfShapesToRender * 2);
-    //Initialize Cull Array
-    //cull.assign(numberOfShapesToRender, false);
-    cull = new bool[numberOfShapesToRender] {};
-    //Read in number of threads from stdin to be compatible with input formatting
+    // Initialize Cull Array
+    // cull.assign(numberOfShapesToRender, false);
+    cull = new bool[numberOfShapesToRender]{};
+    // Read in number of threads from stdin to be compatible with input formatting
     int unused;
     cin >> unused;
-    //Read in information on dimensions of each shape (radius of each circle) followed by its X, Y, and Z coordinates from stdin
-    for (int i = 0; i < numberOfShapesToRender; i++) {
-        cin >> infoForShape[i];     //Read in information on dimensions (radius)
-        cin >> position[2 * i];       //Read in X coordinate
-        cin >> position[(2 * i) + 1];   //Read in Y coordinate
+    // Read in information on dimensions of each shape (radius of each circle) followed by its X, Y, and Z coordinates from stdin
+    for (int i = 0; i < numberOfShapesToRender; i++)
+    {
+        cin >> infoForShape[i];       // Read in information on dimensions (radius)
+        cin >> position[2 * i];       // Read in X coordinate
+        cin >> position[(2 * i) + 1]; // Read in Y coordinate
     }
 
     //-----Begin Processing-----
     /* Note that this is the part of the algorithm which will need concurrency to be implemneted efficiently*/
-        //-----Culling Algorithim-----
-        /*A simple Culling Algorithm for determining whether Circle A is covered by Circle B is:
-        if(sqrt((XB-XA)^2 + (YB-YA)^2)<radiusB){
-            circle A is covered
-        }
+    //-----Culling Algorithim-----
+    /*A simple Culling Algorithm for determining whether Circle A is covered by Circle B is:
+    if(sqrt((XB-XA)^2 + (YB-YA)^2)<radiusB){
+        circle A is covered
+    }
 
-        This implementation will compare each pair of circles using that algorithim in O(N^2) time
-        [Note: this might be able to be sped up by using an O(NLog(N)) sort to limit which circles need to be compared by Z value]
-        [Another potential optimization is to store nearby shapes in some kind of buffer so that shapes very far apart do not need to be compared]
-        */
-    for (int i = 0; i < numberOfShapesToRender; i++) {                                           //for each Circle A
-        for (int j = 0; j < numberOfShapesToRender && !cull[i]; j++) {                          //for each Circle B (Skip further comparisons if Circle A has already been covered)
-            if (cull[j]) {                                                                       //if Circle B is covered by another Circle C
-                continue;                                                                      //Dont bother comparing against Circle A as if Circle B covers Circle A then Circle C will cover Circle A
+    This implementation will compare each pair of circles using that algorithim in O(N^2) time
+    [Note: this might be able to be sped up by using an O(NLog(N)) sort to limit which circles need to be compared by Z value]
+    [Another potential optimization is to store nearby shapes in some kind of buffer so that shapes very far apart do not need to be compared]
+    */
+    for (int i = 0; i < numberOfShapesToRender; i++)
+    { // for each Circle A
+        for (int j = 0; j < numberOfShapesToRender && !cull[i]; j++)
+        { // for each Circle B (Skip further comparisons if Circle A has already been covered)
+            if (cull[j])
+            {             // if Circle B is covered by another Circle C
+                continue; // Dont bother comparing against Circle A as if Circle B covers Circle A then Circle C will cover Circle A
             }
-            if (i == j) {
+            if (i == j)
+            {
                 continue;
             }
-            float XA = position[2 * i];                                                       //Store information about Circle A
+            float XA = position[2 * i]; // Store information about Circle A
             float YA = position[(2 * i) + 1];
             float lengthA = infoForShape[i];
 
-            float XB = position[2 * j];                                                       //Store information about Circle B
+            float XB = position[2 * j]; // Store information about Circle B
             float YB = position[(2 * j) + 1];
             float lengthB = infoForShape[j];
             float deltaX = XB - XA;
             float deltaY = YB - YA;
-            if (sqrt((deltaX * deltaX) + (deltaY * deltaY)) + infoForShape[i] < infoForShape[j] && infoForShape[i] < infoForShape[j]) {                //if Circle A is covered by circle B
-                cull[i] = true;                                                            //Dont draw Circle A (Circle A is culled)
+            if (sqrt((deltaX * deltaX) + (deltaY * deltaY)) + infoForShape[i] < infoForShape[j] && infoForShape[i] < infoForShape[j])
+            {                   // if Circle A is covered by circle B
+                cull[i] = true; // Dont draw Circle A (Circle A is culled)
             }
         }
     }
-    //All remaining false values in the cull Array represent circles that are at least in part uncovered (need to be drawn)
+    // All remaining false values in the cull Array represent circles that are at least in part uncovered (need to be drawn)
 
     //-----Drawing Algorithim-----
     /*A simple drawing Algorithm for determining which gridUnits are filled by Circle I:
@@ -101,32 +107,41 @@ int main()
     This implementation will run the above algorithim on each circle in O(N*(maxLength^2)) time
     [Note: this might be able to be sped up by using a Data structure to avoid running a check on every single circle]
     */
-    for (int i = 0; i < numberOfShapesToRender; i++) {
-        if (cull[i]) {                                                                                //if shape has been culled by culling algorithim
-            continue;                                                                                  //Do not evaluate
+    for (int i = 0; i < numberOfShapesToRender; i++)
+    {
+        if (cull[i])
+        {             // if shape has been culled by culling algorithim
+            continue; // Do not evaluate
         }
-        int minX = (int)position[2 * i] - infoForShape[i];                                        //get bounds of Shape in terms of grid units (integers)
+        int minX = (int)position[2 * i] - infoForShape[i]; // get bounds of Shape in terms of grid units (integers)
         int minY = (int)position[(2 * i) + 1] - infoForShape[i];
         int maxX = (int)position[2 * i] + infoForShape[i] + 1;
         int maxY = (int)position[(2 * i) + 1] + infoForShape[i] + 1;
-        if (minX < 0) {
+        if (minX < 0)
+        {
             minX = 0;
         }
-        if (minY < 0) {
+        if (minY < 0)
+        {
             minY = 0;
         }
-        if (maxX > horizontalExtentOfGrid) {
+        if (maxX > horizontalExtentOfGrid)
+        {
             maxX = horizontalExtentOfGrid;
         }
-        if (maxY > verticalExtentOfGrid) {
+        if (maxY > verticalExtentOfGrid)
+        {
             maxY = verticalExtentOfGrid;
         }
-        for (int X = minX; X < maxX; X++) {                                                                 //for each grid unit in bounds
+        for (int X = minX; X < maxX; X++)
+        { // for each grid unit in bounds
             float deltaX = position[2 * i] - X;
-            for (int Y = minY; Y < maxY; Y++) {
+            for (int Y = minY; Y < maxY; Y++)
+            {
                 float deltaY = position[(2 * i) + 1] - Y;
-                if (sqrt((deltaX * deltaX) + (deltaY * deltaY)) < infoForShape[i]) {
-                    isFilled[Y][X] = true;   //this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
+                if (sqrt((deltaX * deltaX) + (deltaY * deltaY)) < infoForShape[i])
+                {
+                    isFilled[Y][X] = true; // this grid unit is filled if Math.sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI
                 }
             }
         }
@@ -136,19 +151,24 @@ int main()
 
     //-----Output Results-----
     /*All the data needed for the output is stored in the isFilled array, for the sake of visualization this array will be printed to stdout in O(n*m) time*/
-    for (int Y = 0; Y < verticalExtentOfGrid; Y++) {          //for each unit of the grid
-        for (int X = 0; X < horizontalExtentOfGrid; X++) {
-            if ((isFilled[Y])[X]) {                             //if the gridUnit is filled
-                cout << "[X]";                              //print X in the cell
+    for (int Y = 0; Y < verticalExtentOfGrid; Y++)
+    { // for each unit of the grid
+        for (int X = 0; X < horizontalExtentOfGrid; X++)
+        {
+            if ((isFilled[Y])[X])
+            {                  // if the gridUnit is filled
+                cout << "[X]"; // print X in the cell
             }
-            else {                                          //else
-                cout << "[_]";                              //print _ in the cell
+            else
+            {                  // else
+                cout << "[_]"; // print _ in the cell
             }
         }
         cout << "\n";
     }
     delete[] cull;
-    for (int i = 0; i < verticalExtentOfGrid; i++) {
+    for (int i = 0; i < verticalExtentOfGrid; i++)
+    {
         delete[] isFilled[i];
     }
     delete[] isFilled;
