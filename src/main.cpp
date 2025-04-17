@@ -17,9 +17,8 @@ int main()
     bool* cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
     bool** isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
 
-
     //-----Read User Input from "input.txt"-----
-    std::ifstream in("C:\\Users\\Gavin Cruz\\Documents\\ParDisSys\\Final-Project\\Simple-Graphics-Renderer\\src\\input.txt");
+    std::ifstream in("C:\\Users\\nwass\\Desktop\\Simple-Graphics-Renderer\\src\\input.txt");
     if (!in) {
         std::cerr << "Failed to open input.txt\n";
         return 1;  // or handle error appropriately
