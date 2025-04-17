@@ -3,7 +3,6 @@
 #include <thread>
 #include <atomic>
 #include <math.h>
-#include <chrono>
 
 using namespace std;
 

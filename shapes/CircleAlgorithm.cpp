@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
-#include <chrono>
 
 using namespace std;
 
@@ -140,13 +139,13 @@ int main()
     for (int Y = 0; Y < verticalExtentOfGrid; Y++) {          //for each unit of the grid
         for (int X = 0; X < horizontalExtentOfGrid; X++) {
             if ((isFilled[Y])[X]) {                             //if the gridUnit is filled
-                //cout << "[X]";                              //print X in the cell
+                cout << "[X]";                              //print X in the cell
             }
             else {                                          //else
-                //cout << "[_]";                              //print _ in the cell
+                cout << "[_]";                              //print _ in the cell
             }
         }
-        //cout << "\n";
+        cout << "\n";
     }
     delete[] cull;
     for (int i = 0; i < verticalExtentOfGrid; i++) {
