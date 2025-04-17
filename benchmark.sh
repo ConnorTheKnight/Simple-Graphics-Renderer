@@ -1,8 +1,8 @@
 #!/bin/bash
 
 iterations=5
-cpp1="CircleAlgorithm.cpp"
-cpp2="CircleAlgorithmParallel.cpp"
+cpp1="shapes/CircleAlgorithm.cpp"
+cpp2="shapes/CircleAlgorithmParallel.cpp"
 exe1="CircleSequential"
 exe2="CircleParallel"
 input_file="./inputs/Input11.txt"
