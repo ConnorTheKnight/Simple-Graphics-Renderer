@@ -31,7 +31,7 @@ int main() {
     bool** isFilled;                      //Store whether or not a gridUnit is occupied
 
     //-----Read User Input from "rectangle_input.txt"-----
-    std::ifstream in("src\\input.txt");
+    std::ifstream in("src\\rectangle_input.txt");
     if (!in) {
         std::cerr << "Failed to open rectangle_input.txt\n";
         return 1; // or handle error appropriately
