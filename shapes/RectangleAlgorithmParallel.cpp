@@ -6,44 +6,44 @@
 
 using namespace std;
 
-vector<float> infoForShape;             //Store information on the size of each shape (for now only circles are being considered and thus only radius is needed)
-vector<float> position;                 //Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the circle [Note: Bottom = minimum Y value, Left = minimum X value])
+vector<float> infoForShape;           //Store information on the size of each shape (for now only squares are being considered and thus only 1 sidelength per square is needed)
+vector<float> position;               //Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the square [Note: Bottom = minimum Y value, Left = minimum X value])
 atomic<bool>* cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
 atomic<bool>** isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
 
-atomic<int> shapesToDraw;
+atomic<int> numberOfUnculledShapes;
 
 int verticalExtentOfGrid;
 int horizontalExtentOfGrid;
 void sequentialCullingAlgorithmIRange(int i, int k, int maxJ) {
-    for (int index1 = i; index1 < k; index1++) {//for each circle i
+    for (int index1 = i; index1 < k; index1++) {//for each square i
         for (int index2 = 0; index2 < maxJ && !cull[index1].load(memory_order_relaxed); index2++) {
             if (cull[index2].load(memory_order_relaxed)) {//if j has been culled
                 continue;
             }
             //---
-            /*float XA = position.at(2*index1);                                                       //Store information about Circle A
-            float YA = position.at((2*index1)+1);
-
-            float XB = position.at(2*index2);                                                       //Store information about Circle B
-            float YB = position.at((2*index2)+1);
-            float radiusA = infoForShape.at(index1);
-            float radiusB = infoForShape.at(index2);
-            float deltaX = (position.at(2*index2) - position.at(2*index1));
-            float deltaY = (position.at((2*index2)+1) - position.at((2*index1)+1));*/
             if (index1 == index2) {
                 continue;
             }
-            if (sqrt(((position.at(2 * index2) - position.at(2 * index1)) * (position.at(2 * index2) - position.at(2 * index1))) + ((position.at((2 * index2) + 1) - position.at((2 * index1) + 1)) * (position.at((2 * index2) + 1) - position.at((2 * index1) + 1)))) + infoForShape.at(index1) < infoForShape.at(index2) && infoForShape.at(index1) < infoForShape.at(index2)) {//if Circle A is covered by circle B if the magnitude of the x and y distance of the center of the inner circle from the center of the outer circle  
-                if (position.at(2 * index1) == position.at(2 * index2) && position.at(2 * index1 + 1) == position.at(2 * index2 + 1) && infoForShape.at(index1) == infoForShape.at(index2)) {
+            float XA = position.at(2*index1);                                                       //Store information about Square A
+            float YA = position.at((2*index1)+1);
+            float widthA = infoForShape.at(2*index1);
+            float heightA = infoForShape.at(2*index1+1);
+                
+            float XB = position.at(2*index2);                                                       //Store information about Square B
+            float YB = position.at((2*index2)+1);
+            float widthB = infoForShape.at(2*index2);
+            float heightB = infoForShape.at(2*index2+1);
+            if ((XA>XB)&&(YA>YB)&&(XA+widthA<XB+widthB)&&(YA+heightA<YB+heightB)) {
+                if (position.at(2 * index1) == position.at(2 * index2) && position.at(2 * index1 + 1) == position.at(2 * index2 + 1) && infoForShape.at(index1*2) == infoForShape.at(index2*2) && infoForShape.at(index1*2+1) == infoForShape.at(index2*2+1)) {
                     if (index1 < index2) {
                         cull[index1].store(true, memory_order_relaxed);
-                        shapesToDraw--;
+                        numberOfUnculledShapes--;
                     }
                     continue;
                 }
                 cull[index1].store(true, memory_order_relaxed);                                                            //Dont draw Circle A (Circle A is culled)
-                shapesToDraw--;
+                numberOfUnculledShapes--;
                 continue;
             }
             //---
@@ -78,29 +78,25 @@ void sequentialDrawingAlgorithmIRange(int i, int k, int maxI) {
             continue;
         }
         shapesDrawn++;
-        int boundX = position.at((index0 * 2)) - infoForShape.at(index0);
-        int boundY = position.at((index0 * 2) + 1) - infoForShape.at(index0);
-        int sideLengthX = (infoForShape.at(index0) * 2) + 1;
-        int sideLengthY = (infoForShape.at(index0) * 2) + 1;
-        if (boundX < 0) {
-            boundX = 0;
+        int minX = (int) position.at(2*i);                         //get bounds of Shape in terms of grid units (integers)
+        int minY = (int) position.at((2*i)+1);
+        int maxX = (int) (position.at(2*i)+infoForShape.at(2*i)+1);
+        int maxY = (int) (position.at((2*i)+1)+infoForShape.at(2*i+1)+1);
+        if(minX<0){
+            minX = 0;
         }
-        if (boundY < 0) {
-            boundY = 0;
+        if(minY<0){
+            minY = 0;
         }
-        if (boundX + sideLengthX >= horizontalExtentOfGrid) {
-            sideLengthX = horizontalExtentOfGrid - boundX;
+        if(maxX>horizontalExtentOfGrid){
+            maxX = horizontalExtentOfGrid;
         }
-        if (boundY + sideLengthY >= verticalExtentOfGrid) {
-            sideLengthY = verticalExtentOfGrid - boundY;
+        if(maxY>verticalExtentOfGrid){
+            maxY = verticalExtentOfGrid;
         }
-        for (int index1 = boundX; index1 < boundX + sideLengthX; index1++) {
-            for (int index2 = boundY; index2 < boundY + sideLengthY; index2++) {
-                float deltaX = position.at(2 * index0) - index1;
-                float deltaY = position.at((2 * index0) + 1) - index2;
-                if (sqrt((deltaX * deltaX) + (deltaY * deltaY)) < infoForShape.at(index0)) {
-                    isFilled[index2][index1].store(true, memory_order_relaxed);        //this grid unit is filled if the magnitude of the x and y displacement from the center of the circle is less than the radius of the circle
-                }
+        for(int X = minX; X < maxX; X++){                          //for each grid unit in bounds
+            for(int Y = minY; Y < maxY; Y++){
+                isFilled[Y][X].store(true, memory_order_relaxed);        //this grid unit is filled
             }
         }
     }
@@ -127,7 +123,7 @@ int main()
     //Read in number of shapes to render from stdin
     cin >> numberOfShapesToRender;
     //Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
-    infoForShape.resize(numberOfShapesToRender);
+    infoForShape.resize(numberOfShapesToRender*2);
     //Initialize Positon Array
     position.resize(numberOfShapesToRender * 2);
     //Initialize Cull Array
@@ -135,20 +131,21 @@ int main()
     //Read in number of threads to use from stdin
     cin >> numberThreads;
     //Read in information on dimensions of each shape (radius of each circle) followed by its X, Y, and Z coordinates from stdin
-    for (int i = 0; i < numberOfShapesToRender; i++) {
-        cin >> infoForShape.at(i);     //Read in information on dimensions (radius)
-        cin >> position.at(2 * i);       //Read in X coordinate
-        cin >> position.at((2 * i) + 1);   //Read in Y coordinate
+    for(int i = 0; i < numberOfShapesToRender; i++){
+        cin >> infoForShape.at(2*i);     //Read in information on dimensions (width)
+        cin >> infoForShape.at(2*i+1);   //Read in information on dimensions (height)
+        cin >> position.at(2*i);       //Read in X coordinate
+        cin >> position.at((2*i)+1);   //Read in Y coordinate
     }
 
 
     //-----Begin Processing-----
-    shapesToDraw.store(numberOfShapesToRender, memory_order_relaxed);
+    numberOfUnculledShapes.store(numberOfShapesToRender, memory_order_relaxed);
     //-----Culling Algorithim-----
-    /*A simple Culling Algorithm for determining whether Circle A is covered by Circle B is:
-    if(sqrt((XB-XA)^2 + (YB-YA)^2)<radiusB){
-        circle A is covered
-    }
+    /*A simple Culling Algorithm for determining whether Square A is covered by square B is:
+        if((XA>XB)&&(YA>YB)&&(ZA<ZB)&&(XA+lengthA<XB+lengthB)&&(YA+lengthA<YB+lengthB)){
+            square A is covered
+        }
 
     This implementation will uses threads to simultaneously compare each pair of circles using that algorithim in (O(N)/numThreads)*O(N) time
     [Note: this might be able to be sped up by using an O(NLog(N)) sort to limit which circles need to be compared by Z value]
@@ -161,29 +158,25 @@ int main()
     */
     distributeWorkCullingAlgorithm(numberOfShapesToRender, numberOfShapesToRender, numberThreads);
 
-    //All remaining false values in the cull Array represent circles that are at least in part uncovered (need to be drawn)
+    //All remaining false values in the cull Array represent squares that are at least in part uncovered (need to be drawn)
 
     //-----Drawing Algorithim-----
-    /*A simple drawing Algorithm for determining which gridUnits are filled by Circle I:
-    for CircleI
-        minX = (int) XI-radiusI
-        minY = (int) YI-radiusI
-        maxX = (int) (XI+radiusI+1)              //Technically wrong on the edge case that XI has no fractional value
-        maxY = (int) (YI+radiusI+1)              //Technically wrong on the edge case that YI has no fractional value
-        for(int X = minX; X < maxX; X++){
-            float deltaX = XI-X
-            for(int Y = minY; Y < maxY; Y++){
-                float deltaY = YI-Y
-                if(sqrt((deltaX*deltaX)+(deltaY*deltaY))<radiusI){
-                    this grid unit is filled
+    /*A simple drawing Algorithm for determining which gridUnits are filled by Square I:
+        for SquareI
+            minX = (int) XI
+            minY = (int) YI
+            maxX = (int) (XI+length+1)              //Technically wrong on the edge case that XI has no fractional value
+            maxY = (int) (YI+length+1)              //Technically wrong on the edge case that YI has no fractional value
+            for(int X = minX; X < maxX; X++){
+                for(int Y = minY; Y < maxY; Y++){
+                    this grid unit [X,Y] is filled
                 }
             }
-        }
-    This implementation will run the above algorithim on each circle in O(N*(maxLength^2)) time
-    [Note: this might be able to be sped up by using a Data structure to avoid running a check on every single circle]
-    */
+        This implementation will run the above algorithim on each square in O(N*(maxLength^2)) time 
+        [Note: this might be able to be sped up by using a Data structure to avoid running a check on every single square]
+        */
     vector<thread> threads;
-    int shapesPerThread = shapesToDraw.load(memory_order_relaxed);
+    int shapesPerThread = numberOfUnculledShapes.load(memory_order_relaxed);
     int excessShapes = shapesPerThread % (numberThreads + 1);
     shapesPerThread /= (numberThreads + 1);
     int index = 0;

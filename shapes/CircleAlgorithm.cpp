@@ -22,7 +22,6 @@ int main()
     //Read in number of horizontal grid units from stdin
     cin >> horizontalExtentOfGrid;
     //Initialize isFilled Array
-    //isFilled.assign(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
     isFilled = new bool* [verticalExtentOfGrid];
     for (int i = 0; i < verticalExtentOfGrid; i++) {
         isFilled[i] = new bool[horizontalExtentOfGrid];
@@ -34,7 +33,6 @@ int main()
     //Initialize Positon Array
     position.resize(numberOfShapesToRender * 2);
     //Initialize Cull Array
-    //cull.assign(numberOfShapesToRender, false);
     cull = new bool[numberOfShapesToRender] {};
     //Read in number of threads from stdin to be compatible with input formatting
     int unused;

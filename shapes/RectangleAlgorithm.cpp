@@ -11,8 +11,8 @@ int main()
     int numberOfShapesToRender = 0; //Store number of shapes to be provided for rendering
     vector<float> infoForShape;           //Store information on the size of each shape (for now only squares are being considered and thus only 1 sidelength per square is needed)
     vector<float> position;               //Store X, Y, and Z coordinate of a known point of this shape (for now that is the bottom left corner of the square [Note: Bottom = minimum Y value, Left = minimum X value])
-    vector<bool> cull;                 //Store whether or not to draw a given shape (output of culling algorithm)
-    vector<vector<bool>> isFilled;           //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
+    bool* cull;                      //Store whether or not to draw a given shape (output of culling algorithm)
+    bool** isFilled;          //Store whether or not a gridUnit is occupied by a shape (output of draw algorithm)
     
     
     //-----Read User Input-----
@@ -21,7 +21,10 @@ int main()
     //Read in number of horizontal grid units from stdin
     cin >> horizontalExtentOfGrid;
     //Initialize isFilled Array
-    isFilled.assign(verticalExtentOfGrid, vector<bool>(horizontalExtentOfGrid, false));
+    isFilled = new bool* [verticalExtentOfGrid];
+    for (int i = 0; i < verticalExtentOfGrid; i++) {
+        isFilled[i] = new bool[horizontalExtentOfGrid];
+    }
     //Read in number of shapes to render from stdin
     cin >> numberOfShapesToRender;
     //Initialize Info Array (Note that for future 2-D shapes more than one piece of information per shape may be needed)
@@ -29,7 +32,7 @@ int main()
     //Initialize Positon Array
     position.resize(numberOfShapesToRender*2);
     //Initialize Cull Array
-    cull.assign(numberOfShapesToRender, false);
+    cull = new bool[numberOfShapesToRender] {};
     //Read in number of threads from stdin to be compatible with input formatting
     int unused;
     cin >> unused;
@@ -54,7 +57,7 @@ int main()
         [Another potential optimization is to store nearby shapes in some kind of buffer so that shapes very far apart do not need to be compared]
         */
         for(int i = 0; i < numberOfShapesToRender; i++){                                        //for each Square A
-            for(int j = 0; j < numberOfShapesToRender&&!cull.at(i); j++){                           //for each Square B (Skip further comparisons if Square A has already been covered)
+            for(int j = 0; j < numberOfShapesToRender&&!cull[i]; j++){                           //for each Square B (Skip further comparisons if Square A has already been covered)
                 if(cull[j]){                                                                   //if Square B is covered by another Square C
                     continue;                                                                   //Dont bother comparing against Square A as if Square B covers Square A then Square C will cover Square A
                 }
@@ -71,7 +74,7 @@ int main()
                 float widthB = infoForShape.at(2*j);
                 float heightB = infoForShape.at(2*j+1);
                 if((XA>XB)&&(YA>YB)&&(XA+widthA<XB+widthB)&&(YA+heightA<YB+heightB)){//if Square A is covered by square B
-                    cull.at(i) = true;                                                            //Dont draw Square A (Square A is culled)
+                    cull[i] = true;                                                            //Dont draw Square A (Square A is culled)
                 }
             }
         }                                                                                       
@@ -93,7 +96,7 @@ int main()
         [Note: this might be able to be sped up by using a Data structure to avoid running a check on every single square]
         */
         for(int i = 0; i < numberOfShapesToRender; i++){
-            if(cull.at(i)){                                            //if shape has been culled by culling algorithim
+            if(cull[i]){                                            //if shape has been culled by culling algorithim
                 continue;                                           //Do not evaluate
             }
             int minX = (int) position.at(2*i);                         //get bounds of Shape in terms of grid units (integers)
@@ -104,7 +107,7 @@ int main()
                 minX = 0;
             }
             if(minY<0){
-                minX = 0;
+                minY = 0;
             }
             if(maxX>horizontalExtentOfGrid){
                 maxX = horizontalExtentOfGrid;
@@ -113,7 +116,7 @@ int main()
                 maxY = verticalExtentOfGrid;
             }
             for(int X = minX; X < maxX; X++){                          //for each grid unit in bounds
-                for(int Y = minY; Y < maxX; Y++){
+                for(int Y = minY; Y < maxY; Y++){
                     isFilled[Y][X] = true;                          //this grid unit is filled
                 }
             }
